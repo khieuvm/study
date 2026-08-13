@@ -4,7 +4,7 @@ from pathlib import Path
 
 st.set_page_config(page_title="C/C++ Interview Prep", layout="wide")
 
-EXCLUDE_FILES = {"CLAUDE.md", "README.md", "README_APP.md", "QUICK_START.md"}
+EXCLUDE_FILES = {"CLAUDE.md", "README.md", "README_APP.md", "QUICK_START.md", "BILINGUAL_QA_TEMPLATE.md"}
 
 
 def parse_qa(text):
