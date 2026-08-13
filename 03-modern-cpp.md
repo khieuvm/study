@@ -6,7 +6,7 @@
 A: Dùng để giảm lặp type dai và tránh mismatch. không nên dùng nếu làm mo nghĩa API/public interface.
 
 ### Q2. `decltype(auto)` khi nào cần?
-A: Khi muốn giữ nguyen value category/constness của bieu thực trả về.
+A: Khi muốn giữ nguyen value category/constness của biểu thức trả về.
 
 ### Q3. Lambda capture `[=]` và `[&]` rủi ro gì?
 A: `[=]` có thể copy object nang/không đóng bỏ; `[&]` để đang dangling reference nếu lambda sóng lau hon scope.
@@ -28,10 +28,10 @@ A: Tuy context. Có thể copy hoặc bind reference. Cần chu y `auto` vs `aut
 ## 3) C++20
 
 ### Q8. Concept dùng để làm gì?
-A: Rang bước template rõ rang, lỗi compile để đọc hon, API generic để hiểu hon.
+A: Rang bước template rõ ràng, lỗi compile để đọc hon, API generic để hiểu hơn.
 
 ### Q9. `ranges` cai thien gì?
-A: Compose algorithm + view để lazy evaluation, code declarative hon.
+A: Compose algorithm + view để lazy evaluation, code declarative hơn.
 
 ### Q10. Coroutines là gì (muc senior cần nơi)?
 A: Cơ chế suspend/resume compile-time transform. Dùng cho async/generator, tối ưu hon callback spaghetti.
@@ -53,7 +53,7 @@ A: Kiểm tra/ra quyết định kiểu o compile-time (`is_trivially_copyable`,
 ## 5) Build và package ecosystem
 
 ### Q15. Vì sao senior cần biết CMake target-based?
-A: Vì truyen include/define/link options theo target rõ rang, tránh global state kho debug.
+A: Vì truyen include/define/link options theo target rõ ràng, tránh global state kho debug.
 
 ### Q16. `FetchContent`, `find_package`, `add_subdirectory` trade-off?
 A:

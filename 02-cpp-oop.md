@@ -85,7 +85,7 @@ Follow-up (EN): What happens if you define a copy constructor but not a move con
 
 **A:**
 - EN: Constructors have no return value; the only way to signal failure is to **throw an exception**. If the constructor throws, the destructor is NOT called — so resources acquired before the throw must be cleaned up manually, or better, held in RAII wrappers.
-- VI: Constructor không có return value; cách duy nhất báo lỗi là **throw exception**. Nếu constructor throw, destructor Không được gọi — các resource đã cấp phát trước khi throw phải được dọn sạch thủ công, hoặc tốt hơn là dùng RAII wrapper.
+- VI: Constructor không có return value; cách duy nhất báo lỗi là **throw exception**. Nếu constructor throw, destructor không được gọi — các resource đã cấp phát trước khi throw phải được dọn sạch thủ công, hoặc tốt hơn là dùng RAII wrapper.
 
 ```cpp
 class File {
@@ -248,7 +248,7 @@ Follow-up (EN): Should a class marked `final` still have a virtual destructor? (
 
 **A:**
 - EN: A pure virtual function (`= 0`) has no implementation in the base and forces derived classes to provide one. A class with any pure virtual function is **abstract** and cannot be instantiated. Note: a pure virtual function *can* have a body — derived classes can explicitly call it.
-- VI: Pure virtual function (`= 0`) không có implementation o base, bước derived phải implement. Class có bất kỳ pure virtual function nào là **abstract**, không thể tạo object. Lưu y: pure virtual *có thể* có body — derived có thể gọi no tường mình.
+- VI: Pure virtual function (`= 0`) không có implementation ở base, buộc derived phải implement. Class có bất kỳ pure virtual function nào là **abstract**, không thể tạo object. Lưu ý: pure virtual *có thể* có body — derived có thể gọi nó tường minh.
 
 ```cpp
 class Shape {
@@ -280,11 +280,11 @@ Follow-up (EN): Can an abstract class have a constructor? (Yes — it's called b
 
 ---
 
-### Q9. Diamond problem là gì? Virtual inheritance gìải quyết thế nào?
+### Q9. Diamond problem là gì? Virtual inheritance giải quyết thế nào?
 
 **A:**
 - EN: Diamond problem occurs when a class inherits from two classes that share a common base — it gets two copies of the base. Virtual inheritance ensures only one shared base instance exists, at the cost of an extra vbtable pointer and more complex construction.
-- VI: Diamond problem xảy ra khi một class kế thừa từ hai class cũng chung một base — nó có 2 bản sao của base. Virtual inheritance đảm bảo chỉ có 1 bản sao base, đổi lai thêm vbtable pointer và construction phức tạp hon.
+- VI: Diamond problem xảy ra khi một class kế thừa từ hai class cùng chung một base — nó có 2 bản sao của base. Virtual inheritance đảm bảo chỉ có 1 bản sao base, đổi lại thêm vbtable pointer và construction phức tạp hơn.
 
 ```
      Base
@@ -315,7 +315,7 @@ b.x = 1;  // OK: only one copy of Base
 ```
 
 - EN: In practice, needing diamond inheritance usually signals a design problem — prefer composition.
-- VI: Thực tế, cần diamond inheritance thường là đầu hiểu thiết kế sai — nên dùng composition.
+- VI: Thực tế, cần diamond inheritance thường là dấu hiệu thiết kế sai — nên dùng composition.
 
 Follow-up (EN): Who is responsible for constructing the virtual base in diamond inheritance? (The most-derived class.)
 
@@ -327,7 +327,7 @@ Follow-up (EN): Who is responsible for constructing the virtual base in diamond 
 
 **A:**
 - EN: **RAII (Resource Acquisition Is Initialization)**: tie resource lifetime to object lifetime. The constructor acquires, the destructor releases — automatically. This makes code exception-safe and eliminates resource leaks regardless of control flow (early return, exceptions, etc.).
-- VI: **RAII**: gần vòng đời resource với vòng đời object. Constructor cấp phát, destructor gìải phóng — tự động. Code tro nên exception-safe và không leak resource bắt kế control flow (return sớm, exception, ...).
+- VI: **RAII**: gắn vòng đời resource với vòng đời object. Constructor cấp phát, destructor giải phóng — tự động. Code trở nên exception-safe và không leak resource bất kể control flow (return sớm, exception, ...).
 
 ```cpp
 // Without RAII (C style) — error-prone
@@ -361,7 +361,7 @@ Follow-up (EN): How does RAII provide exception safety?
 
 **A:**
 - EN: `explicit` prevents implicit conversions through single-argument constructors. Without it, the compiler can silently convert types in surprising ways. Rule: single-argument constructors should be `explicit` unless implicit conversion is intentionally desired.
-- VI: `explicit` ngăn compiler tự động chuyển đổi kiểu qua constructor 1 tham số. không có no, compiler có thể chuyển đổi kiểu âm thầm. Quy tắc: constructor 1 tham số nên có `explicit` tru khi muốn implicit conversion.
+- VI: `explicit` ngăn compiler tự động chuyển đổi kiểu qua constructor 1 tham số. không có nó, compiler có thể chuyển đổi kiểu âm thầm. Quy tắc: constructor 1 tham số nên có `explicit` trừ khi muốn implicit conversion.
 
 ```cpp
 class MyString {
@@ -394,8 +394,8 @@ Follow-up (EN): Does `explicit` apply to conversion operators too? (Yes, since C
 ### Q12. Khi nào dùng member function, khi nào dùng free function khi overload operator?
 
 **A:**
-- EN: Some operators (`=`, `[]`, `()`, `->`) **must** be members. Symmetric binary operators (`+`, `==`) should be free functions số both operands can undergo conversion. Stream operators (`<<`, `>>`) must be free functions since the left operand is `ostream`/`istream`.
-- VI: Một số operator (`=`, `[]`, `()`, `->`) **phải** là member. Binary operator đổi xung (`+`, `==`) nên là free function để cả 2 operand đều có thể convert. Stream operator (`<<`, `>>`) phải là free function vì operand trái là `ostream`/`istream`.
+- EN: Some operators (`=`, `[]`, `()`, `->`) **must** be members. Symmetric binary operators (`+`, `==`) should be free functions so both operands can undergo conversion. Stream operators (`<<`, `>>`) must be free functions since the left operand is `ostream`/`istream`.
+- VI: Một số operator (`=`, `[]`, `()`, `->`) **phải** là member. Binary operator đối xứng (`+`, `==`) nên là free function để cả 2 operand đều có thể convert. Stream operator (`<<`, `>>`) phải là free function vì operand trái là `ostream`/`istream`.
 
 | Operator | Recommended form |
 |---|---|
@@ -429,7 +429,7 @@ Follow-up (EN): What is the spaceship operator (`<=>`) in C++20 and how does it 
 
 **A:**
 - EN: `friend` grants another function or class access to private/protected members. Use for operator overloading and tightly coupled classes. Avoid overuse — it breaks encapsulation.
-- VI: `friend` cho phép function hoặc class khác truy cập private/protected members. Dùng cho operator overloading và các class liên kết chat. Tránh làm dùng — nó phá vo encapsulation.
+- VI: `friend` cho phép function hoặc class khác truy cập private/protected members. Dùng cho operator overloading và các class liên kết chặt. Tránh lạm dụng — nó phá vỡ encapsulation.
 
 ```cpp
 class BankAccount {
@@ -447,7 +447,7 @@ public:
 ```
 
 - EN: When to use: operator overloading, factory functions, serialization. When NOT to: if public/protected API can solve it — prefer that.
-- VI: Khi nào dùng: operator overloading, factory function, serialization. Khi nào Không: nếu public/protected API gìải quyết được — ưu tiên cách do.
+- VI: Khi nào dùng: operator overloading, factory function, serialization. Khi nào KHÔNG: nếu public/protected API giải quyết được — ưu tiên cách đó.
 
 Follow-up (EN): Is friendship inherited or transitive? (No to both.)
 
@@ -459,7 +459,7 @@ Follow-up (EN): Is friendship inherited or transitive? (No to both.)
 
 **A:**
 - EN: The inheritance access specifier controls how base class members are exposed in the derived class. `public` = is-a (most common), `protected` = rare, `private` = implemented-in-terms-of (usually prefer composition instead).
-- VI: Access specifier của inheritance quyết định cách members của base được expose trong derived. `public` = is-a (phổ biến nhất), `protected` = hiem, `private` = implemented-in-terms-of (thường nên dùng composition thay thể).
+- VI: Access specifier của inheritance quyết định cách members của base được expose trong derived. `public` = is-a (phổ biến nhất), `protected` = hiếm, `private` = implemented-in-terms-of (thường nên dùng composition thay thế).
 
 ```cpp
 class Base { public: int x; protected: int y; private: int z; };
@@ -473,11 +473,11 @@ Follow-up (EN): Give an example where private inheritance is preferable to compo
 
 ---
 
-### Q15. Composition vs Inheritance — khi nào dùng cai nào?
+### Q15. Composition vs Inheritance — khi nào dùng cái nào?
 
 **A:**
 - EN: **Prefer composition over inheritance.** Use inheritance only for true "is-a" relationships where you need polymorphism. Use composition for "has-a" relationships and code reuse without exposing the internal interface.
-- VI: **Ưu tiên composition hon inheritance.** Chỉ dùng inheritance khi có quan hệ "is-a" thực sự và cần polymorphism. Dùng composition cho quan hệ "has-a" và reuse code mà không lo interface nội bộ.
+- VI: **Ưu tiên composition hơn inheritance.** Chỉ dùng inheritance khi có quan hệ "is-a" thực sự và cần polymorphism. Dùng composition cho quan hệ "has-a" và reuse code mà không lo interface nội bộ.
 
 ```cpp
 // BAD: inheritance just for reuse
@@ -502,8 +502,8 @@ Follow-up (EN): What is the Liskov Substitution Principle and how does it relate
 ### Q16. CRTP (Curiously Recurring Template Pattern) là gì?
 
 **A:**
-- EN: CRTP is a technique where a class inherits from a template instantiated with itself: `class Derived : Base<Derived>`. It achieves **static (compile-time) polymorphism** — nó vtable, nó runtime overhead, and the compiler can inline everything.
-- VI: CRTP là kỹ thuật trong do class kế thừa từ template mà tham số là chính no: `class Derived : Base<Derived>`. Đặt được **static polymorphism** — không vtable, không overhead runtime, compiler có thể inline tất cả.
+- EN: CRTP is a technique where a class inherits from a template instantiated with itself: `class Derived : Base<Derived>`. It achieves **static (compile-time) polymorphism** — no vtable, no runtime overhead, and the compiler can inline everything.
+- VI: CRTP là kỹ thuật trong đó class kế thừa từ template mà tham số là chính nó: `class Derived : Base<Derived>`. Đạt được **static polymorphism** — không vtable, không overhead runtime, compiler có thể inline tất cả.
 
 ```cpp
 // Runtime polymorphism (virtual):

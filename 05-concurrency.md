@@ -19,7 +19,7 @@ A: Atomicity cho operation trên biến do. không tự động đảm bảo toa
 ### Q5. Memory order có các muc nào?
 A: `relaxed`, `consume` (it dùng), `acquire`, `release`, `acq_rel`, `seq_cst`.
 
-### Q6. Acquire/Release hiểu đơn gìản?
+### Q6. Acquire/Release hiểu đơn giản?
 A: Store-release cổng bỏ dữ liệu trước do; load-acquire nhìn thấy dữ liệu do nếu đóng bỏ thành cổng.
 
 ### Q7. Khi nào dùng `relaxed`?
@@ -46,7 +46,7 @@ A: Giá trị A đổi thành B rồi ve A, compare-exchange thay van A nên ngh
 
 ## 5) Practical senior questions
 
-### Q13. Cách debug bug concurrency hiem gap?
+### Q13. Cách debug bug concurrency hiếm gap?
 A:
 1. Bắt TSAN.
 2. Log có timestamp/thread id.
@@ -64,7 +64,7 @@ A: Giảm chi phí tạo/huy thread, gioi hanh muc concurrency, cai thien latenc
 
 ## 6) Muc senior leadership
 
-### Q17. Khi nào ưu tiên đơn gìản hon lock-free?
+### Q17. Khi nào ưu tiên đơn giản hon lock-free?
 A: Mặc định. Lock-free chỉ dùng khi profile xác nhận lock là bottleneck nghiêm trọng.
 
 ### Q18. Cách review code concurrent của team?

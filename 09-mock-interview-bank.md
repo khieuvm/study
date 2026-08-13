@@ -20,7 +20,7 @@ Hướng dan: Mọi lan mock chon 12-15 câu, cần bảng các nhom. Mọi câu
 - Dap an ky vong: rõ contract, cho phép optimize, giảm bug mutability.
 
 6. `std::move` không move that su là sao?
-- Dap an ky vong: cast sáng rvalue ref; move xảy ra nếu move ctor/assign được gọi.
+- Dap an ky vong: cast sang rvalue ref; move xảy ra nếu move ctor/assign được gọi.
 
 7. Exception safety levels là gì?
 - Dap an ky vong: basic/strong/no-throw + ví dụ.
@@ -168,7 +168,7 @@ Hướng dan: Mọi lan mock chon 12-15 câu, cần bảng các nhom. Mọi câu
 52. Nhận dien false bottleneck.
 - Dap an ky vong: correlation != causation, cần controlled experiment.
 
-53. Debug crash hiem gap.
+53. Debug crash hiếm gap.
 - Dap an ky vong: core dump + symbols + sanitizers + bisect.
 
 54. Khi nào rewrite thay vì optimize?
@@ -183,7 +183,7 @@ Hướng dan: Mọi lan mock chon 12-15 câu, cần bảng các nhom. Mọi câu
 59. Lan ban fail và hoc được gì.
 60. Cách ban ưu tiên cổng viec khi mọi thu đều gap.
 61. Cách ban danh gia effort/risk trước khi commitment.
-62. Cách ban giữ chat luồng code trong team nhanh.
+62. Cách ban giữ chất lượng code trong team nhanh.
 63. Cách ban truyen đặt trade-off cho stakeholder.
 64. Why you for senior role?
 

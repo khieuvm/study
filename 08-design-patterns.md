@@ -64,7 +64,7 @@ Follow-up (EN): When would you choose Factory Method over Abstract Factory?
 
 **A:**
 - EN: Builder separates **construction** of a complex object from its **representation**. Uses a fluent interface (method chaining) to set optional parameters step-by-step, then calls `build()` to produce the final object.
-- VI: Builder tách **qua trình xảy dùng** object phức tạp khoi **bieu dien** của no. Dùng fluent interface (method chaining) để set các tham số tùy chọn từng bước, rồi gọi `build()` để tạo object cũối cũng.
+- VI: Builder tách **qua trình xảy dùng** object phức tạp khoi **biểu diễn** của nó. Dùng fluent interface (method chaining) để set các tham số tùy chọn từng bước, rồi gọi `build()` để tạo object cuối cũng.
 
 ```cpp
 auto req = HttpRequestBuilder{}
@@ -119,7 +119,7 @@ Follow-up (EN): What is the performance cost of PIMPL (extra indirection, heap a
 
 **A:**
 - EN: Adapter converts the interface of an existing class to match what the client expects — allows incompatible interfaces to work together without modifying the original class.
-- VI: Adapter chuyển đổi interface của class có sẵn sáng đang client mong đổi — cho phép các interface không tương thích làm viec cũng nhau mà không sua class gốc.
+- VI: Adapter chuyển đổi interface của class có sẵn sáng đang client mong đổi — cho phép các interface không tương thích làm việc cũng nhau mà không sua class gốc.
 
 ```cpp
 // Client expects ModernLogger
@@ -150,7 +150,7 @@ Follow-up (EN): What is the difference between class adapter (inheritance) and o
 
 **A:**
 - EN: Decorator adds behavior to objects **dynamically** by wrapping them — each decorator implements the same interface as the wrapped object. Decorators can be stacked: `Compress(Buffer(File))`. Prefer over inheritance for combining behaviors.
-- VI: Decorator thêm behavior cho object **đóng** bằng cách wrap chung — mọi decorator implement cũng interface với object được wrap. Decorator có thể xep chong: `Compress(Buffer(File))`. Ưu tiên hon inheritance cho viec kết hợp behavior.
+- VI: Decorator thêm behavior cho object **đóng** bằng cách wrap chung — mọi decorator implement cũng interface với object được wrap. Decorator có thể xep chong: `Compress(Buffer(File))`. Ưu tiên hơn inheritance cho viec kết hợp behavior.
 
 ```cpp
 class Stream {
@@ -216,7 +216,7 @@ Follow-up (EN): How would you handle observer lifetime (unsubscribe, weak refere
 
 **A:**
 - EN: Strategy defines a family of interchangeable algorithms, encapsulating each one so they can be swapped at runtime. Modern C++: use `std::function` or templates instead of virtual dispatch for simpler cases.
-- VI: Strategy định nghĩa family algorithm có thể hoan đổi, đóng gói tung cai để có thể swap lúc runtime. C++ hiện đại: dùng `std::function` hoặc template thay vì virtual dispatch cho trường hợp đơn gìản.
+- VI: Strategy định nghĩa family algorithm có thể hoan đổi, đóng gói tung cai để có thể swap lúc runtime. C++ hiện đại: dùng `std::function` hoặc template thay vì virtual dispatch cho trường hợp đơn giản.
 
 ```cpp
 // Classic: virtual dispatch
@@ -244,7 +244,7 @@ Follow-up (EN): When would you prefer a template-based strategy over `std::funct
 
 **A:**
 - EN: Command encapsulates a request as an object — enabling queuing, logging, and **undo/redo**. Each command stores enough state to execute and reverse the operation.
-- VI: Command đóng gói request thành object — cho phép queuing, logging, và **undo/redo**. Mọi command lưu đủ state để execute và reverse thao tac.
+- VI: Command đóng gói request thành object — cho phép queuing, logging, và **undo/redo**. Mọi command lưu đủ state để execute và reverse thao tác.
 
 ```cpp
 class Command {

@@ -8,7 +8,7 @@
 
 **A:**
 - EN: Modern CPUs have a multi-level cache hierarchy: L1 (~4 cycles, 32-64KB per core), L2 (~12 cycles, 256KB-1MB), L3 (~40 cycles, 4-32MB shared), RAM (~100 cycles). The **cache line** (64 bytes) is the minimum transfer unit. Accessing data sequentially (row-major) is 5-10x faster than striding (column-major) on large arrays due to cache locality.
-- VI: CPU hiện đại có cache nhiều cấp: L1 (~4 chu kỳ, 32-64KB mỗi core), L2 (~12 chu kỳ, 256KB-1MB), L3 (~40 chu kỳ, 4-32MB shared), RAM (~100 chu kỳ). **Cache line** (64 byte) là đơn vị truyen tối thìểu. Truy cập dữ liệu tương tự (row-major) nhanh gap 5-10 lan số với nhảy (column-major) trên mạng lớn nhỏ cache locality.
+- VI: CPU hiện đại có cache nhiều cấp: L1 (~4 chu kỳ, 32-64KB mỗi core), L2 (~12 chu kỳ, 256KB-1MB), L3 (~40 chu kỳ, 4-32MB shared), RAM (~100 chu kỳ). **Cache line** (64 byte) là đơn vị truyen tối thìểu. Truy cập dữ liệu tương tự (row-major) nhanh gap 5-10 lan so với nhảy (column-major) trên mạng lớn nhỏ cache locality.
 
 ```cpp
 // BAD: column-major access — cache miss every element
@@ -49,7 +49,7 @@ Follow-up (EN): How would you detect false sharing using `perf`?
 
 **A:**
 - EN: DOD organizes data for **cache efficiency** rather than object hierarchy. Instead of Array-of-Structures (AoS, OOP-traditional), use Structure-of-Arrays (SoA) — each field in a contiguous array. SoA is cache-friendly and SIMD-friendly, enabling auto-vectorization.
-- VI: DOD tổ chức dữ liệu theo **hiệu quả cache** thay vì phân cấp object. Thay vì Array-of-Structures (AoS, OOP truyền thống), dùng Structure-of-Arrays (SoA) — mọi field trong 1 mạng liên tục. SoA cache-friendly và SIMD-friendly, cho phép auto-vectorization.
+- VI: DOD tổ chức dữ liệu theo **hiệu quả cache** thay vì phân cấp object. Thay vì Array-of-Structures (AoS, OOP truyền thống), dùng Structure-of-Arrays (SoA) — mọi field trong 1 mảng liên tục. SoA cache-friendly và SIMD-friendly, cho phép auto-vectorization.
 
 ```cpp
 // AoS (traditional OOP) — cache waste when accessing only x,y,z
@@ -103,7 +103,7 @@ Follow-up (EN): How can you verify the compiler actually vectorized a loop? (Use
 
 **A:**
 - EN: SIMD performs the **same operation on multiple data elements** simultaneously: SSE (128-bit = 4 floats), AVX2 (256-bit = 8 floats), AVX-512 (512-bit = 16 floats). Prefer letting the compiler auto-vectorize (`-O2 -march=native`); use intrinsics only when manual control is needed.
-- VI: SIMD thực hiện **cũng phep tinh trên nhiều phần tử** đồng thời: SSE (128-bit = 4 float), AVX2 (256-bit = 8 float), AVX-512 (512-bit = 16 float). Ưu tiên để compiler auto-vectorize (`-O2 -march=native`); chỉ dùng intrinsics khi cần kiểm soat thủ công.
+- VI: SIMD thực hiện **cũng phép tính trên nhiều phần tử** đồng thời: SSE (128-bit = 4 float), AVX2 (256-bit = 8 float), AVX-512 (512-bit = 16 float). Ưu tiên để compiler auto-vectorize (`-O2 -march=native`); chỉ dùng intrinsics khi cần kiểm soát thủ công.
 
 ```cpp
 // Prefer: auto-vectorization (compiler does it)

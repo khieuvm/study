@@ -11,7 +11,7 @@ A:
 - `unordered_map`: trung bình O(1), không có thứ tự, phụ thuộc hash/rehash
 
 ### Q3. `deque` dùng khi nào?
-A: Khi cần push/pop o ca đầu và cũối nhiều, và random access van cần.
+A: Khi cần push/pop o ca đầu và cuối nhiều, và random access van cần.
 
 ## 2) Iterator invalidation
 
@@ -30,7 +30,7 @@ A: Code rõ y do, it bug, tối ưu tốt, để compose.
 A: `remove` chi partition và trả về iterator mọi, không xóa size container. Cần `erase` tiếp.
 
 ### Q8. `stable_sort` vs `sort`?
-A: `stable_sort` giữ thứ tự phần tử bảng nhau, đổi lai ton bộ nhớ và có thể chậm hon.
+A: `stable_sort` giữ thứ tự phần tử bảng nhau, đổi lại ton bộ nhớ và có thể chậm hơn.
 
 ### Q9. Big-O có đủ để dự đoán toc do không?
 A: Không đủ. Cần tinh đến constant factor, cache miss, branch misprediction, allocator cost.

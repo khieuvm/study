@@ -1,6 +1,6 @@
 # 08 - Behavioral và Leadership (Senior/Lead)
 
-## 1) Các nhóm câu hỏi thường gap
+## 1) Các nhóm câu hỏi thường gặp
 
 ### Q1. Kế ve 1 lần ban xử lý production incident kho.
 Khung trả lỗi STAR:
@@ -26,7 +26,7 @@ Dap an mạnh:
 ### Q4. Senior ownership nghĩa là gì?
 A: Không chỉ viết code. Bao gồm requirement clarity, quality gate, observability, rollout, incident handling.
 
-### Q5. Làm sao cần bảng toc do và chat luồng?
+### Q5. Làm sao cần bảng toc do và chất lượng?
 A: Tách must-have vs nice-to-have, release increment, có guardrail test + monitoring.
 
 ## 3) Communication
@@ -56,4 +56,4 @@ A:
 
 - "Em ưu tiên data và impact trước, opinion sau."
 - "Em để xuat 2 option kem trade-off, estimate, và risk rollback."
-- "Sau mọi incident, em có action item với owner rõ rang, không để bài hoc bi quen."
+- "Sau mọi incident, em có action item với owner rõ ràng, không để bài hoc bi quen."

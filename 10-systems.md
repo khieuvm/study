@@ -138,7 +138,7 @@ Follow-up (EN): How do you synchronize access to shared memory between processes
 
 **A:**
 - EN: Socket programming follows: **create** (`socket()`), **bind** (server: assign address), **listen** (server: accept queue), **accept** (server: new connection), **connect** (client: to server). TCP provides reliable ordered streams; UDP provides unreliable datagrams. Always set `SO_REUSEADDR` on servers to avoid "Address already in use".
-- VI: Socket programming theo quy trình: **tạo** (`socket()`), **bind** (server: gần địa chỉ), **listen** (server: hang đổi accept), **accept** (server: kết nối mọi), **connect** (client: đến server). TCP cũng cấp stream đáng tin cậy; UDP cũng cấp datagram không đáng tin cậy. Luôn set `SO_REUSEADDR` trên server để tránh "Address already in use".
+- VI: Socket programming theo quy trình: **tạo** (`socket()`), **bind** (server: gần địa chỉ), **listen** (server: hang đổi accept), **accept** (server: kết nối mọi), **connect** (client: đến server). TCP cung cấp stream đáng tin cậy; UDP cung cấp datagram không đáng tin cậy. Luôn set `SO_REUSEADDR` trên server để tránh "Address already in use".
 
 ```cpp
 // TCP Server

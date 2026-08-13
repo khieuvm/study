@@ -8,7 +8,7 @@
 
 **A:**
 - EN: Function templates can deduce template arguments from call arguments; class templates require explicit types (until C++17 CTAD). Function templates cannot be partially specialized; class templates can.
-- VI: Function template có thể suy dien kiểu từ argument khi gọi; class template phải chỉ rõ kiểu (cho đến C++17 CTAD). Function template không thể partial specialization; class template thì có.
+- VI: Function template có thể suy diễn kiểu từ argument khi gọi; class template phải chỉ rõ kiểu (cho đến C++17 CTAD). Function template không thể partial specialization; class template thì có.
 
 ```cpp
 // Function template: type deduced from arguments
@@ -37,7 +37,7 @@ Follow-up (EN): What is CTAD (Class Template Argument Deduction) and when does i
 
 **A:**
 - EN: Template specialization provides a **custom implementation** for specific types. **Full specialization** matches exactly one type. **Partial specialization** matches a family of types (only for class templates, not function templates).
-- VI: Template specialization cũng cấp **implementation riêng** cho các kiểu cụ thể. **Full specialization** khop dùng 1 kiểu. **Partial specialization** khop 1 ho kiểu (chi ap dùng cho class template, không cho function template).
+- VI: Template specialization cung cấp **implementation riêng** cho các kiểu cụ thể. **Full specialization** khớp đúng 1 kiểu. **Partial specialization** khớp 1 ho kiểu (chi ap dùng cho class template, không cho function template).
 
 ```cpp
 // Primary template
@@ -67,7 +67,7 @@ Follow-up (EN): Why can't function templates be partially specialized? (Use over
 
 **A:**
 - EN: In a template parameter list, `typename` and `class` are **identical**. However, `typename` has a second use: disambiguating **dependent types** inside template bodies — telling the compiler that a name is a type, not a value.
-- VI: Trong template parameter list, `typename` và `class` **giống hoàn toàn**. Tuy nhien, `typename` còn dùng để chỉ rõ **dependent type** trong than template — báo compiler ten do là kiểu, không phải giá trị.
+- VI: Trong template parameter list, `typename` và `class` **giống hoàn toàn**. Tuy nhiên, `typename` còn dùng để chỉ rõ **dependent type** trong than template — báo compiler ten do là kiểu, không phải giá trị.
 
 ```cpp
 template<typename T> void f(T x);   // OK
@@ -90,7 +90,7 @@ Follow-up (EN): When is the `template` keyword needed to disambiguate in a simil
 
 **A:**
 - EN: **SFINAE (Substitution Failure Is Not An Error)**: when the compiler substitutes types into a template and the result is invalid, that template is silently removed from the overload set instead of causing a compile error. This enables compile-time conditional function selection.
-- VI: **SFINAE**: khi compiler substitute kiểu vào template mà kết quả không hợp le, template do bi loại âm thầm khoi overload set thay vì báo lỗi. Dieu này cho phép chon hàm có điều kiện tại compile time.
+- VI: **SFINAE**: khi compiler substitute kiểu vào template mà kết quả không hợp lệ, template do bi loại âm thầm khỏi overload set thay vì báo lỗi. Dieu này cho phép chon hàm có điều kiện tại compile time.
 
 ```cpp
 // Only enabled if T has value_type member
@@ -124,7 +124,7 @@ Follow-up (EN): What is the difference between "hard errors" and SFINAE-friendly
 
 **A:**
 - EN: Three ways to conditionally enable template code, from oldest to newest: `enable_if` (C++11, verbose but flexible), `if constexpr` (C++17, simple but single function), Concepts (C++20, cleanest syntax and best error messages).
-- VI: Ba cách điều kiện hoa template code, từ cũ đến mọi: `enable_if` (C++11, verbose nhưng linh hoạt), `if constexpr` (C++17, đơn gìản nhưng 1 hàm), Concepts (C++20, cũ phap dep nhất và lỗi báo rõ nhất).
+- VI: Ba cách điều kiện hóa template code, từ cũ đến mọi: `enable_if` (C++11, verbose nhưng linh hoạt), `if constexpr` (C++17, đơn giản nhưng 1 hàm), Concepts (C++20, cú pháp dep nhất và lỗi báo rõ nhất).
 
 ```cpp
 // if constexpr (C++17) — simplest
@@ -153,7 +153,7 @@ Follow-up (EN): Can `if constexpr` replace all uses of `enable_if`? (No — it c
 
 **A:**
 - EN: Type traits (`<type_traits>`) provide compile-time type queries and transformations. Key categories: type checking (`is_integral`, `is_pointer`), property queries (`is_const`, `is_trivially_copyable`), type transformations (`remove_const`, `decay`), and conditionals (`conditional`).
-- VI: Type traits (`<type_traits>`) cũng cấp truy van và biến đổi kiểu tại compile time. Các nhóm chính: kiểm tra kiểu (`is_integral`, `is_pointer`), thuoc tinh (`is_const`, `is_trivially_copyable`), biến đổi kiểu (`remove_const`, `decay`), và điều kiện (`conditional`).
+- VI: Type traits (`<type_traits>`) cung cấp truy vấn và biến đổi kiểu tại compile time. Các nhóm chính: kiểm tra kiểu (`is_integral`, `is_pointer`), thuoc tinh (`is_const`, `is_trivially_copyable`), biến đổi kiểu (`remove_const`, `decay`), và điều kiện (`conditional`).
 
 ```cpp
 #include <type_traits>
@@ -188,7 +188,7 @@ Follow-up (EN): What does `std::is_trivially_copyable` guarantee and why is it i
 
 **A:**
 - EN: Variadic templates accept **any number of arguments** of any types via parameter packs (`typename... Args`). Before C++17, expansion used recursion; C++17 introduced **fold expressions** for concise expansion.
-- VI: Variadic template nhận **bất kỳ số luồng argument** của bất kỳ kiểu qua parameter pack (`typename... Args`). Trước C++17, mở rộng dùng đệ quy; C++17 gioi thieu **fold expression** để mở rộng gọn hơn.
+- VI: Variadic template nhận **bất kỳ số lượng argument** của bất kỳ kiểu qua parameter pack (`typename... Args`). Trước C++17, mở rộng dùng đệ quy; C++17 giới thiệu **fold expression** để mở rộng gọn hơn.
 
 ```cpp
 // C++17 fold expression
@@ -227,7 +227,7 @@ Follow-up (EN): What are the four forms of fold expressions (unary/binary, left/
 
 **A:**
 - EN: Perfect forwarding preserves the **value category** (lvalue/rvalue) of arguments when passing them through template functions. `T&&` in a template is a **forwarding reference** (not an rvalue reference). `std::forward<T>(arg)` casts back to the original category.
-- VI: Perfect forwarding báo toan **value category** (lvalue/rvalue) của argument khi truyen qua template function. `T&&` trong template là **forwarding reference** (không phải rvalue reference). `std::forward<T>(arg)` cast ve category ban đầu.
+- VI: Perfect forwarding bảo toàn **value category** (lvalue/rvalue) của argument khi truyền qua template function. `T&&` trong template là **forwarding reference** (không phải rvalue reference). `std::forward<T>(arg)` cast ve category ban đầu.
 
 ```cpp
 // Without forwarding: rvalue becomes lvalue
@@ -257,7 +257,7 @@ Follow-up (EN): What is reference collapsing and how does it enable forwarding r
 
 **A:**
 - EN: Both compute at compile time. Template metaprogramming (TMP) uses recursive template instantiation — powerful but hard to read. `constexpr` (C++11+) looks like normal code and is preferred. Use TMP for type-level computation; use `constexpr` for value computation.
-- VI: Cả hai đều tinh tại compile time. Template metaprogramming (TMP) dùng recursive template instantiation — mạnh nhưng kho đọc. `constexpr` (C++11+) trang như code thường và được ưu tiên. Dùng TMP cho type-level computation; dùng `constexpr` cho value computation.
+- VI: Cả hai đều tính tại compile time. Template metaprogramming (TMP) dùng recursive template instantiation — mạnh nhưng khó đọc. `constexpr` (C++11+) trang như code thường và được ưu tiên. Dùng TMP cho type-level computation; dùng `constexpr` cho value computation.
 
 ```cpp
 // TMP (C++03 style) — hard to read
@@ -286,7 +286,7 @@ Follow-up (EN): What limitations does C++11 `constexpr` have that C++14/17/20 re
 
 **A:**
 - EN: Concepts are **named constraints** on template parameters. They produce clear error messages (instead of pages of template substitution errors), serve as documentation, and enable overload resolution based on constraints.
-- VI: Concepts là **named constraints** cho template parameters. Chung tạo lỗi báo rõ rang (thay vì nhiều trang lỗi template substitution), làm tài liệu, và cho phép overload resolution dua trên constraints.
+- VI: Concepts là **named constraints** cho template parameters. Chúng tạo lỗi báo rõ ràng (thay vì nhiều trang lỗi template substitution), làm tài liệu, và cho phép overload resolution dua trên constraints.
 
 ```cpp
 // Define concept

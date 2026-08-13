@@ -8,7 +8,7 @@ A: Do trước, tối ưu sau. không tối ưu theo cam giac.
 ### Q2. KPI thường dùng?
 A: p50/p95/p99 latency, throughput, CPU%, RSS, alloc/sec, cache miss rate.
 
-### Q3. Benchmark sai thường gap?
+### Q3. Benchmark sai thường gặp?
 A: Không warmup, benchmark nhỏ qua, bi dead-code elimination, environment không ổn định.
 
 ## 2) Tooling
@@ -36,7 +36,7 @@ A:
 4. Xác nhận ownership contract
 
 ### Q8. Fragmentation vs leak?
-A: Leak là mat tham chiếu không gìải phóng. Fragmentation là heap còn free nhưng tan man kho dùng.
+A: Leak là mat tham chiếu không giải phóng. Fragmentation là heap còn free nhưng tan man kho dùng.
 
 ## 4) CPU-level awareness
 

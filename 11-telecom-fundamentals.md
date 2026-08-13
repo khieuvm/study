@@ -30,7 +30,7 @@ Các viết tắt telecom thường gặp, giải thích cho người mới bắ
 | **Cũ** | Central Unit | Phần trung tạm của gNodeB (xử lý RRC, PDCP) |
 | **Đủ** | Distributed Unit | Phần phần tan của gNodeB (xử lý RLC, MAC, High-PHY) |
 | **RU** | Radio Unit | Phần radio của gNodeB (xử lý Low-PHY, RF) |
-| **O-RAN** | Open RAN | Kiến trúc RAN mo, cho phép thiết bị từ nhiều vendor làm viec cũng nhau |
+| **O-RAN** | Open RAN | Kiến trúc RAN mo, cho phép thiết bị từ nhiều vendor làm việc cũng nhau |
 
 ### Protocol Stack
 
@@ -55,13 +55,13 @@ Các viết tắt telecom thường gặp, giải thích cho người mới bắ
 | **NR** | New Radio | Ten gọi giao diện vô tuyến 5G |
 | **OFDM** | Orthogonal Frequency Division Multiplexing | Kỹ thuật chia bawng tan thành nhiều sóng mạng còn vuông góc — chong nhiều tốt |
 | **MIMO** | Multiple Input Multiple Output | Dùng nhiều anten phát/thu đồng thời để tăng throughput |
-| **QoS** | Quality of Service | Đảm bảo chat luồng dịch vụ (do tre, throughput, mat gọi) |
+| **QoS** | Quality of Service | Đảm bảo chất lượng dịch vụ (do tre, throughput, mat gọi) |
 | **HARQ** | Hybrid Automatic Repeat reQuest | Kết hợp FEC + retransmission, tăng do tin cậy truyền dẫn |
 | **ARQ** | Automatic Repeat reQuest | Cơ chế yêu cầu gửi lại gọi bị lỗi |
 | **FEC** | Forward Error Correction | Mã hóa sua lỗi: thêm redundancy để receiver từ sua lỗi |
 | **RACH** | Random Access Channel | Kênh để UE truy nhập mạng lan đầu (gửi preamble) |
 | **DRX** | Discontinuous Reception | UE tắt radio định ky để tiet kiểm pin |
-| **RNTI** | Radio Network Temporary Identifier | Định danh tạm thoi của UE trong cell (dùng cho scheduling) |
+| **RNTI** | Radio Network Temporary Identifier | Định danh tạm thời của UE trong cell (dùng cho scheduling) |
 | **SRB** | Signaling Radio Bearer | Kênh mạng tín hiệu điều khiển giữa UE và eNodeB |
 | **DRB** | Data Radio Bearer | Kênh mạng dữ liệu nguoi dùng giữa UE và eNodeB |
 | **TTI** | Transmission Time Interval | Khoang thời gian truyen 1 subframe (1ms trong LTE) |
@@ -77,7 +77,7 @@ Các viết tắt telecom thường gặp, giải thích cho người mới bắ
 | **GTP** | GPRS Tunneling Protocol | Giao thức đóng gói (tunnel) dữ liệu qua core network |
 | **GTP-U** | GTP User plane | Tunnel dữ liệu nguoi dùng (UDP port 2152) |
 | **GTP-C** | GTP Control plane | Tunnel signaling quản lý session (UDP port 2123) |
-| **TEID** | Tunnel Endpoint Identifier | ID 32-bit định danh đầu cũối tunnel, định tuyến dữ liệu |
+| **TEID** | Tunnel Endpoint Identifier | ID 32-bit định danh đầu cuối tunnel, định tuyến dữ liệu |
 | **SCTP** | Stream Control Transmission Protocol | Transport protocol cho signaling telecom (thay TCP) |
 | **ASN.1** | Abstract Syntax Notation One | Ngon ngu mô tả cấu trúc message, dùng trong telecom từ 1984 |
 | **PER** | Packed Encoding Rules | Cách encode ASN.1 compact nhất (dùng cho RRC, S1AP) |
@@ -111,13 +111,13 @@ Các viết tắt telecom thường gặp, giải thích cho người mới bắ
 
 **A:**
 - EN: A cellular network has three main components: UE (User Equipment), RAN (Radio Access Network — eNodeB/gNodeB), and CN (Core Network — EPC/5GC). Architecture evolved from hierarchical (2G/3G) to flat (4G/5G) with control/user plane separation.
-- VI: Mạng cellular gồm 3 thành phần chính: UE (thiết bị đầu cũối), RAN (mạng truy nhập vô tuyến — eNodeB/gNodeB), và CN (core network — EPC/5GC). Kiến trúc tiến hóa từ phân cấp (2G/3G) sáng phang (4G/5G) với tách riêng control/user plane.
+- VI: Mạng cellular gồm 3 thành phần chính: UE (thiết bị đầu cuối), RAN (mạng truy nhập vô tuyến — eNodeB/gNodeB), và CN (core network — EPC/5GC). Kiến trúc tiến hóa từ phân cấp (2G/3G) sáng phang (4G/5G) với tách riêng control/user plane.
 
 Mạng cellular gồm 3 thành phần chính:
 
 | Thành phần | Vai tro | Ví dụ |
 |---|---|---|
-| **UE (User Equipment)** | Thiết bị đầu cũối (điện thoại, IoT device) | Smartphone, modem |
+| **UE (User Equipment)** | Thiết bị đầu cuối (điện thoại, IoT device) | Smartphone, modem |
 | **RAN (Radio Access Network)** | Mạng truy nhập vô tuyến, kết nối UE với core | eNodeB (4G), gNodeB (5G) |
 | **CN (Core Network)** | Xử lý đang ky, xác thực, định tuyến, tinh cuộc | EPC (4G), 5GC (5G) |
 
@@ -135,7 +135,7 @@ Mạng cellular gồm 3 thành phần chính:
 - **Control/User plane separation (CUPS)**: tách riêng signaling và data (5G làm triet để)
 - **Virtualization**: từ hardware chuyên dụng sáng NFV/cloud-native (5G)
 
-**Lien he C/C++:** Phần lớn software trên eNodeB/gNodeB (RAN side) được viết bằng C/C++ chạy trên DSP/multi-core platforms. Đầy là nơi C/C++ engineer làm viec nhiều nhất.
+**Lien he C/C++:** Phần lớn software trên eNodeB/gNodeB (RAN side) được viết bằng C/C++ chạy trên DSP/multi-core platforms. Đầy là nơi C/C++ engineer làm việc nhiều nhất.
 
 ---
 
@@ -414,7 +414,7 @@ Sender (eNodeB)                    Receiver (UE)
 
 | Kiểu | Mô tả | Hiệu quả |
 |---|---|---|
-| **Chase Combining (CC)** | Retransmit cũng 1 data, combine bằng cách cổng tín hiệu (soft combining) | Đơn gìản, SNR gain ~3dB |
+| **Chase Combining (CC)** | Retransmit cũng 1 data, combine bằng cách cổng tín hiệu (soft combining) | Đơn giản, SNR gain ~3dB |
 | **Incremental Redundancy (IR)** | Retransmit các redundancy bits khác nhau, giảm code rate | Hiệu quả hon CC, dùng nhiều trong thực tế |
 
 **Trong LTE:**
@@ -470,7 +470,7 @@ void harq_handle_feedback(harq_process_t* proc, bool ack) {
 
 ---
 
-### Q8. ASN.1 là gì? Tại sao no được dùng trong telecom? Làm sao C/C++ engineer làm viec với ASN.1?
+### Q8. ASN.1 là gì? Tại sao no được dùng trong telecom? Làm sao C/C++ engineer làm việc với ASN.1?
 
 **A:**
 - EN: ASN.1 (Abstract Syntax Notation One) is a data structure description language used in telecom to define messages. Encoding rules: PER/UPER for RRC messages (most compact), APER for S1AP/X2AP. Workflow: ASN.1 spec → ASN.1 compiler → generated C/C++ encode/decode code. Developer integrates generated code into protocol stack.
@@ -604,7 +604,7 @@ RRC Connection Setup là qua trình UE thiết lập kết nối signaling với
 **Bước 2: RRCConnectionSetup (eNodeB -> UE)**
 - eNodeB cấu hình SRB1 (Signaling Radio Bearer 1)
 - Chưa cấu hình: RLC config, MAC config (BSR, PHR, DRX), PHY config (CQI reporting, SRS)
-- UE ap dùng các config này và chuyển sáng RRC_CONNECTED
+- UE ap dùng các config này và chuyển sang RRC_CONNECTED
 
 **Bước 3: RRCConnectionSetupComplete (UE -> eNodeB)**
 - UE xác nhận đã cấu hình xong
@@ -662,7 +662,7 @@ void handle_rrc_connection_request(
 
 ---
 
-### Q10. 5G NR khác gì số với LTE ve mat protocol stack và kiến trúc? Nhưng điểm nào ảnh hưởng đến software implementation?
+### Q10. 5G NR khác gì so với LTE ve mat protocol stack và kiến trúc? Nhưng điểm nào ảnh hưởng đến software implementation?
 
 **A:**
 - EN: 5G NR key differences from LTE: CU/DU/RU disaggregation, flexible numerology (15/30/60/120/240 kHz subcarrier spacing), mini-slots for URLLC, new SDAP layer for QoS flow mapping, RRC_INACTIVE state, dynamic TDD, beam management. Numerology impacts all timing — slot duration = 1ms / 2^mu.
@@ -694,15 +694,15 @@ LTE eNodeB (monolithic):          5G gNodeB (disaggregated):
 
 | Feature | LTE | 5G NR | Impact lên code |
 |---|---|---|---|
-| Subcarrier spacing | 15 kHz cố định | 15/30/60/120/240 kHz (numerology) | Flexible timing, scheduling phức tạp hon |
+| Subcarrier spacing | 15 kHz cố định | 15/30/60/120/240 kHz (numerology) | Flexible timing, scheduling phức tạp hơn |
 | Slot duration | 1ms cố định | 0.0625ms - 1ms (tuy numerology) | Timer resolution cao hơn |
 | Bandwidth Part (BWP) | Không có | Có | UE chi monitor 1 phần của carrier bandwidth |
 | Mini-slot | Không có | 2/4/7 symbols | Low-latency scheduling, URLLC |
 | SDAP layer | Không có | Có (mọi) | QoS flow mapping, thêm 1 layer xử lý |
-| Beam management | Đơn gìản | Beam sweeping, beam tracking | Phức tạp hon nhiều, mỗi cell nhiều beam |
+| Beam management | Đơn giản | Beam sweeping, beam tracking | Phức tạp hon nhiều, mỗi cell nhiều beam |
 | RRC state | IDLE / CONNECTED | IDLE / **INACTIVE** / CONNECTED | Thêm 1 state, tiet kiểm pin và signaling |
 | Duplex | FDD / TDD | FDD / TDD / **Dynamic TDD** | Scheduler phải handle linh hoạt DL/UL |
-| DRX | Đơn gìản | Multi-level DRX | Power saving phức tạp hon |
+| DRX | Đơn giản | Multi-level DRX | Power saving phức tạp hơn |
 
 **SDAP (Service Data Adaptation Protocol) — layer mọi trong 5G:**
 
@@ -763,10 +763,10 @@ void nr_schedule_slot(uint8_t mu, uint16_t slot_idx) {
 - EN: DSP (Digital Signal Processor) is optimized for repetitive signal processing with deterministic timing. Telecom uses DSP for PHY/MAC layers requiring hard real-time (~1ms deadline). Key differences from GPP: fixed-point hardware, tightly-coupled memory, DMA, software pipelining, cycle-accurate profiling instead of wall-clock time.
 - VI: DSP được tối ưu cho xử lý tín hiệu lặp lai với timing cố định. Telecom dùng DSP cho PHY/MAC layer yêu cầu hard real-time (~1ms deadline). Khác GPP: fixed-point hardware, tightly-coupled memory, DMA, software pipelining, profiling theo cycle thay vì wall-clock time.
 
-**DSP** là vi xử lý chuyên dụng cho xử lý tín hiệu số (digital signal processing), được tối ưu cho các phep tinh toan lặp di lặp lai trên luồng dữ liệu liên tục.
+**DSP** là vi xử lý chuyên dụng cho xử lý tín hiệu số (digital signal processing), được tối ưu cho các phép tính toan lặp di lặp lai trên luồng dữ liệu liên tục.
 
 **Tại sao telecom dùng DSP:**
-- Xử lý PHY layer cần tinh toan **FFT, filtering, modulation** rat nhanh và cố định (deterministic)
+- Xử lý PHY layer cần tính toán **FFT, filtering, modulation** rat nhanh và cố định (deterministic)
 - Cần **hard real-time**: xử lý 1 subframe trong dùng 1ms, không được tre
 - Power efficiency cao hơn GPU/CPU cho signal processing workloads
 
@@ -960,7 +960,7 @@ void receive_data_from_other_core(void* buf, uint32_t size) {
 
 **A:**
 - EN: RTOS provides deterministic, bounded latency (microseconds) unlike Linux (milliseconds, variable). Used for L1/L2 in telecom. Enea OSE (common in Ericsson): signal-based IPC model (no shared-memory mutexes). VxWorks: task-based, POSIX-like. Choice: bare-metal/RTOS for L1-L2, Linux for L3/OAM.
-- VI: RTOS cũng cấp latency cố định, có giới hạn (microsecond) khác Linux (millisecond, biến động). Dùng cho L1/L2 trong telecom. Enea OSE (phổ biến o Ericsson): IPC model dua trên signal (không dùng shared-memory mutex). VxWorks: task-based, giống POSIX. Lua chon: bare-metal/RTOS cho L1-L2, Linux cho L3/OAM.
+- VI: RTOS cung cấp latency cố định, có giới hạn (microsecond) khác Linux (millisecond, biến động). Dùng cho L1/L2 trong telecom. Enea OSE (phổ biến o Ericsson): IPC model dua trên signal (không dùng shared-memory mutex). VxWorks: task-based, giống POSIX. Lua chon: bare-metal/RTOS cho L1-L2, Linux cho L3/OAM.
 
 **RTOS** là hệ điều hành đảm bảo đáp ứng yêu cầu ve thời gian (deadline) một cách **deterministic** (có thể dự đoán được).
 
@@ -984,7 +984,7 @@ void receive_data_from_other_core(void* buf, uint32_t size) {
 |---|---|---|
 | **Hard real-time** | Miss deadline = system failure | DSP processing L1 (1ms), HARQ timing |
 | **Firm real-time** | Miss deadline = result vo giá trị nhưng không crash | Video frame rendering |
-| **Soft real-time** | Miss deadline = giảm chat luồng | RRC signaling, OAM |
+| **Soft real-time** | Miss deadline = giảm chất lượng | RRC signaling, OAM |
 
 **RTOS trong telecom — Enea OSE:**
 
@@ -1030,7 +1030,7 @@ OS_PROCESS(mac_scheduler_proc) {
                                        sig->data_ind.length);
                 break;
         }
-        free_buf(&sig);  // tra signal buffer ve pool
+        free_buf(&sig);  // tra signal buffer về pool
     }
 }
 
@@ -1317,7 +1317,7 @@ void task_main_loop(void) {
 
 **A:**
 - EN: Telecom embedded debugging uses: ring-buffer logging (zero-copy, non-blocking, filterable by module), protocol traces (message sequence charts for call flows), crash info snapshots (registers, stack dump saved to non-volatile memory), cycle-accurate profiling (hardware cycle counters), and memory pool integrity checks (guard patterns at head/tail of each block).
-- VI: Debug embedded telecom dùng: logging ring-buffer (zero-copy, non-blocking, filter theo module), protocol trace (message sequence chart cho call flow), crash info snapshot (register, stack dump lưu vào non-volatile memory), profiling chính xác theo cycle (hardware cycle counter), và kiểm tra toan ven memory pool (guard pattern ở đầu/cũối mỗi block).
+- VI: Debug embedded telecom dùng: logging ring-buffer (zero-copy, non-blocking, filter theo module), protocol trace (message sequence chart cho call flow), crash info snapshot (register, stack dump lưu vào non-volatile memory), profiling chính xác theo cycle (hardware cycle counter), và kiểm tra toan ven memory pool (guard pattern ở đầu/cuối mỗi block).
 
 Debug telecom embedded khác debug application thường vì: không có gdb thông thường, code chạy trên DSP/RTOS, và lỗi thường liên quan timing.
 
@@ -1328,7 +1328,7 @@ Debug telecom embedded khác debug application thường vì: không có gdb th�
 // Khong dung printf (qua cham, block, khong thread-safe)
 
 typedef enum {
-    LOG_ERROR,   // Loi nghiem trong
+    LOG_ERROR,   // Loi nghiêm trọng
     LOG_WARNING, // Bat thuong nhung khong crash
     LOG_INFO,    // Thong tin hoat dong binh thuong
     LOG_DEBUG,   // Chi bat khi debug
@@ -1516,7 +1516,7 @@ void pool_check_integrity(mem_pool_t* pool) {
 
 **A:**
 - EN: SCTP (Stream Control Transmission Protocol) is used for telecom signaling (S1AP, X2AP) instead of TCP because it provides: multi-homing (automatic failover between IPs), multi-streaming (no head-of-line blocking — one stream's loss doesn't block others), and message boundaries (unlike TCP's byte stream). Port 36412 for S1AP.
-- VI: SCTP được dùng cho signaling telecom (S1AP, X2AP) thay vì TCP vì no cũng cấp: multi-homing (tự động failover giữa các IP), multi-streaming (không head-of-line blocking — mat 1 stream không block stream khác), và message boundary (khác TCP là byte stream). Port 36412 cho S1AP.
+- VI: SCTP được dùng cho signaling telecom (S1AP, X2AP) thay vì TCP vì no cung cấp: multi-homing (tự động failover giữa các IP), multi-streaming (không head-of-line blocking — mat 1 stream không block stream khác), và message boundary (khác TCP là byte stream). Port 36412 cho S1AP.
 
 **SCTP (Stream Control Transmission Protocol)** được thiết kế cho signaling telecom, khác phuc các han che của TCP.
 
@@ -1544,7 +1544,7 @@ SCTP association dung cả 2 path:
 - Primary path: IP1 <-> IP1
 - Backup path: IP2 <-> IP2
 - Khi primary fail -> tu dong chuyen sang backup (< 1 second)
-- Khong can application xu ly failover
+- Khong can application xử lý failover
 ```
 
 **Multi-streaming:**
@@ -1742,7 +1742,7 @@ void mac_receive(buf_desc_t* bd) {
 
 > "Tối đa tìm hiểu cơ bản ve kiến trúc mạng LTE và 5G. Tới hiểu rang LTE dùng kiến trúc EPC với các thành phần như eNodeB, MME, S-GW, P-GW. Protocol stack gồm các layer PHY, MAC, RLC, PDCP, RRC — mỗi layer có chức năng riêng, từ xử lý tín hiệu vật lý đến quản lý kết nối.
 >
-> 5G NR có nhưng thay đổi quan trọng như Cũ/Đủ/RU split, flexible numerology, và network slicing. Tới thay các khái niệm như DSP programming, real-time processing, và multi-core architecture kha gần với kinh nghiệm embedded của tới trên Toradex iMX — nơi tối đa làm viec với GStreamer pipelines và tối ưu từ 30fps lên 60fps.
+> 5G NR có nhưng thay đổi quan trọng như Cũ/Đủ/RU split, flexible numerology, và network slicing. Tới thay các khái niệm như DSP programming, real-time processing, và multi-core architecture kha gần với kinh nghiệm embedded của tới trên Toradex iMX — nơi tối đa làm việc với GStreamer pipelines và tối ưu từ 30fps lên 60fps.
 >
 > Tới cũng hiểu rang code trong telecom phải đặt carrier-grade với yêu cầu 99.999% availability, và phần lớn L1/L2 code chạy trên DSP với hard real-time constraints. Đầy là linh vuc tới muốn hoc thêm và tới tin kinh nghiệm C/C++ system programming sẽ giúp tới nhanh chóng bắt kip."
 
@@ -1754,7 +1754,7 @@ void mac_receive(buf_desc_t* bd) {
 
 ---
 
-### Q20. Các câu hỏi C/C++ thường gap khi phỏng vấn vào vì tri telecom. Chung khác gì với phỏng vấn C/C++ thông thường?
+### Q20. Các câu hỏi C/C++ thường gặp khi phỏng vấn vào vì tri telecom. Chung khác gì với phỏng vấn C/C++ thông thường?
 
 **A:**
 - EN: Telecom C/C++ interviews focus more on: embedded memory management (memory pools, why no malloc at runtime), real-time concurrency (spinlock vs mutex on multi-core, priority inversion), bit manipulation (extract/set fields in protocol headers), endianness (network byte order conversion), and state machines (table-driven design for protocol handling).
@@ -1771,7 +1771,7 @@ Phỏng vấn telecom C/C++ tap trung hon vào **embedded, performance, và reli
   -> Guard patterns, bounds checking, static analysis
 
 **2. Concurrency — hướng real-time:**
-- "Mutex vs Spinlock — khi nào dùng cai nào trên multi-core embedded?"
+- "Mutex vs Spinlock — khi nào dùng cái nào trên multi-core embedded?"
   -> Spinlock: critical section ngan, không được sleep, interrupt context
   -> Mutex: critical section dai, có thể sleep, có priority inheritance
 - "Lock-free queue dùng trong trường hợp nào?"
@@ -1779,7 +1779,7 @@ Phỏng vấn telecom C/C++ tap trung hon vào **embedded, performance, và reli
 - "Priority Inversion là gì? Cách xử lý?"
   -> (Như Q14)
 
-**3. Bit manipulation — rat thường gap trong telecom:**
+**3. Bit manipulation — rat thường gặp trong telecom:**
 ```c
 // "Extract field tu mot protocol header"
 // VD: MAC header co cac field packed trong vài bytes
@@ -1929,7 +1929,7 @@ int gtpu_decapsulate(uint8_t* gtp_packet, uint32_t gtp_len,
 
 **A:**
 - EN: LTE X2 Handover: UE sends measurement report → source eNodeB sends HO Request to target → target responds with HO Request Ack (containing RRC config) → source sends RRC Reconfiguration to UE → UE performs RACH on target → path switch through MME/S-GW. Critical: data forwarding (source → target), PDCP SN preservation, timer management (T304, T_RELOC).
-- VI: LTE X2 Handover: UE gửi measurement report → source eNodeB gửi HO Request tới target → target trả lỗi HO Request Ack (chưa RRC config) → source gửi RRC Reconfiguration cho UE → UE thực hiện RACH trên target → path switch qua MME/S-GW. Quan trọng: data forwarding (source → target), báo toan PDCP SN, quản lý timer (T304, T_RELOC).
+- VI: LTE X2 Handover: UE gửi measurement report → source eNodeB gửi HO Request tới target → target trả lỗi HO Request Ack (chưa RRC config) → source gửi RRC Reconfiguration cho UE → UE thực hiện RACH trên target → path switch qua MME/S-GW. Quan trọng: data forwarding (source → target), bảo toàn PDCP SN, quản lý timer (T304, T_RELOC).
 
 **Handover** là qua trình chuyển UE từ cell này sáng cell khác mà không gian doan dịch vụ.
 

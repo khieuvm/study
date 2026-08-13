@@ -4,11 +4,11 @@
 
 ## 1) Stack vs Heap
 
-### Q1. Stack và Heap khác nhau thế nào? Khi nào dùng cai nào?
+### Q1. Stack và Heap khác nhau thế nào? Khi nào dùng cái nào?
 
 **A:**
 - EN: Stack is fast (O(1) allocation via pointer bump), automatically managed, limited in size (1-8 MB typical). Heap is slower (must find free block), manually managed, virtually unlimited. Use heap when: object outlives scope, size unknown at compile time, or polymorphism via pointer is needed.
-- VI: Stack nhanh (O(1) cấp phát bảng dịch con trỏ), tự động quản lý, giới hạn kích thước (1-8 MB). Heap chậm hon (phải tìm block trong), quản lý thủ công, gần như không giới hạn. Dùng heap khi: object sóng qua scope, kích thước chưa biết lúc compile, hoặc cần polymorphism qua pointer.
+- VI: Stack nhanh (O(1) cấp phát bảng dịch con trỏ), tự động quản lý, giới hạn kích thước (1-8 MB). Heap chậm hơn (phải tìm block trống), quản lý thủ công, gần như không giới hạn. Dùng heap khi: object sóng qua scope, kích thước chưa biết lúc compile, hoặc cần polymorphism qua pointer.
 
 | Feature | Stack | Heap |
 |---|---|---|
@@ -35,7 +35,7 @@ Follow-up (EN): What causes a stack overflow and how would you detect it?
 
 **A:**
 - EN: `new` allocates memory AND calls the constructor; `delete` calls the destructor then frees. `malloc`/`free` do neither — just raw memory. Never mix them (`new` with `free` or `malloc` with `delete` is UB). Always use `delete[]` for arrays allocated with `new[]`.
-- VI: `new` cấp phát memory Và gọi constructor; `delete` gọi destructor rồi gìải phóng. `malloc`/`free` không làm gì ca — chi memory tho. không được tron (`new` với `free` hoặc `malloc` với `delete` là UB). Luôn dùng `delete[]` cho array cấp phát bảng `new[]`.
+- VI: `new` cấp phát memory Và gọi constructor; `delete` gọi destructor rồi giải phóng. `malloc`/`free` không làm gì cả — chỉ memory thô. không được tron (`new` với `free` hoặc `malloc` với `delete` là UB). Luôn dùng `delete[]` cho array cấp phát bảng `new[]`.
 
 | | `malloc`/`free` | `new`/`delete` |
 |---|---|---|
@@ -103,7 +103,7 @@ Follow-up (EN): Where does `mmap` memory go in this layout?
 
 **A:**
 - EN: `unique_ptr` represents **exclusive ownership** — exactly one owner, resource is freed when the owner is destroyed. Zero overhead compared to raw pointer. Cannot be copied, only moved. This is the default smart pointer you should use.
-- VI: `unique_ptr` thể hiện **exclusive ownership** — dùng 1 owner, resource được gìải phóng khi owner bị destroy. không có overhead số với raw pointer. không thể copy, chi move được. Đầy là smart pointer mặc định nên dùng.
+- VI: `unique_ptr` thể hiện **exclusive ownership** — dùng 1 owner, resource được giải phóng khi owner bị destroy. không có overhead so với raw pointer. không thể copy, chi move được. Đầy là smart pointer mặc định nên dùng.
 
 ```cpp
 auto p = std::make_unique<int>(42);     // preferred
@@ -130,7 +130,7 @@ Follow-up (EN): What is the size of `unique_ptr` with a stateless vs stateful de
 
 **A:**
 - EN: `shared_ptr` uses **atomic reference counting** — each copy increments the count, each destruction decrements it. When count reaches zero, the resource is freed. Cost: 2 pointers (16 bytes on 64-bit), atomic operations on copy/destroy (expensive on multi-core). Always prefer `make_shared` (single allocation for object + control block).
-- VI: `shared_ptr` dùng **atomic reference counting** — mỗi lần copy tăng count, destroy gìảm count. Count ve 0 thì gìải phóng. Chi phí: 2 pointers (16 byte trên 64-bit), atomic operations khi copy/destroy (đặt trên multi-core). Luôn dùng `make_shared` (1 allocation cho object + control block).
+- VI: `shared_ptr` dùng **atomic reference counting** — mỗi lần copy tăng count, destroy giảm count. Count về 0 thì giải phóng. Chi phí: 2 pointers (16 byte trên 64-bit), atomic operations khi copy/destroy (đặt trên multi-core). Luôn dùng `make_shared` (1 allocation cho object + control block).
 
 ```cpp
 auto p1 = std::make_shared<int>(42);  // count = 1
@@ -153,11 +153,11 @@ Follow-up (EN): Why is `make_shared` potentially problematic with `weak_ptr`? (M
 
 ---
 
-### Q6. `weak_ptr` dùng để làm gì? Gìải quyết van để gì?
+### Q6. `weak_ptr` dùng để làm gì? Giải quyết van để gì?
 
 **A:**
 - EN: `weak_ptr` is a **non-owning observer** of a `shared_ptr` — it does not increment the reference count. Primary use: breaking **circular references** that would otherwise cause memory leaks. Must call `lock()` to get a `shared_ptr` before use; returns `nullptr` if the object was already destroyed.
-- VI: `weak_ptr` là **non-owning observer** của `shared_ptr` — không tăng reference count. Mục đích chính: phá **vong circular reference** để tránh leak. Phải gọi `lock()` để lấy `shared_ptr` trước khi dùng; trả về `nullptr` nếu object đã bị destroy.
+- VI: `weak_ptr` là **non-owning observer** của `shared_ptr` — không tăng reference count. Mục đích chính: phá **vòng circular reference** để tránh leak. Phải gọi `lock()` để lấy `shared_ptr` trước khi dùng; trả về `nullptr` nếu object đã bị destroy.
 
 ```cpp
 // Problem: circular reference
@@ -190,7 +190,7 @@ Follow-up (EN): Can you construct a `weak_ptr` without a `shared_ptr`?
 
 **A:**
 - EN: **Default to `unique_ptr`** — zero overhead, clear ownership. Upgrade to `shared_ptr` only when genuinely shared ownership is needed (multiple owners, unclear lifetime). Use `weak_ptr` as non-owning reference to break cycles.
-- VI: **Mặc định dùng `unique_ptr`** — không overhead, ownership rõ rang. Chi upgrade lên `shared_ptr` khi thực sự cần shared ownership (nhiều owner, lifetime không rõ). Dùng `weak_ptr` làm non-owning reference để phá cycle.
+- VI: **Mặc định dùng `unique_ptr`** — không overhead, ownership rõ ràng. Chi upgrade lên `shared_ptr` khi thực sự cần shared ownership (nhiều owner, lifetime không rõ). Dùng `weak_ptr` làm non-owning reference để phá cycle.
 
 ```
 unique_ptr  <- default, zero overhead, clear ownership
@@ -210,7 +210,7 @@ Follow-up (EN): Can you convert `unique_ptr` to `shared_ptr`? And the reverse? (
 
 **A:**
 - EN: **Dangling pointer**: a pointer to memory that has been freed. **Use-after-free**: dereferencing a dangling pointer — undefined behavior. Can cause crashes, data corruption, or security vulnerabilities (exploitable in many real-world CVEs).
-- VI: **Dangling pointer**: pointer tro đến memory đã bi gìải phóng. **Use-after-free**: truy cập qua dangling pointer — UB. Có thể crash, hong dữ liệu, hoặc lo hong báo mat (exploit trong nhiều CVE thực tế).
+- VI: **Dangling pointer**: pointer trỏ đến memory đã bị giải phóng. **Use-after-free**: truy cập qua dangling pointer — UB. Có thể crash, hong dữ liệu, hoặc lo hong báo mat (exploit trong nhiều CVE thực tế).
 
 ```cpp
 int* p = new int(42);
@@ -226,7 +226,7 @@ auto p = std::make_unique<int>(42);
 ```
 
 - EN: **Double free**: calling `delete` twice on the same pointer — also UB, can corrupt heap metadata.
-- VI: **Double free**: gọi `delete` 2 lan trên cũng 1 pointer — cũng là UB, có thể corrupt heap.
+- VI: **Double free**: gọi `delete` 2 lần trên cùng 1 pointer — cũng là UB, có thể corrupt heap.
 
 Follow-up (EN): How would you detect use-after-free in production code? (AddressSanitizer, custom allocator with guard patterns.)
 
@@ -269,7 +269,7 @@ Follow-up (EN): Can ASan and TSan be used together? (No — they conflict. Use t
 
 **A:**
 - EN: Placement `new` constructs an object at a **pre-allocated memory address** without allocating new memory. You must call the destructor explicitly (`p->~T()`) — do NOT use `delete`. Used in: custom allocators, memory pools, `std::optional`/`std::variant` internals, shared memory.
-- VI: Placement `new` construct object tại **vùng nhỏ đã cấp phát sẵn** — không cấp phát thêm memory. Phải gọi destructor thủ công (`p->~T()`) — Không dùng `delete`. Dùng trong: custom allocator, memory pool, `std::optional`/`std::variant` internals, shared memory.
+- VI: Placement `new` construct object tại **vùng nhỏ đã cấp phát sẵn** — không cấp phát thêm memory. Phải gọi destructor thủ công (`p->~T()`) — không dùng `delete`. Dùng trong: custom allocator, memory pool, `std::optional`/`std::variant` internals, shared memory.
 
 ```cpp
 char buf[sizeof(Foo)];
@@ -303,7 +303,7 @@ Follow-up (EN): What alignment considerations are needed with placement new?
 
 **A:**
 - EN: STL containers accept a custom allocator template parameter to control how memory is allocated/deallocated. Use cases: memory pools (avoid fragmentation, reduce overhead), stack allocators (ultra-fast), logging/debugging allocators, shared-memory allocators (IPC).
-- VI: STL container nhận custom allocator template parameter để kiểm soat cách cấp phát/gìải phóng memory. Ứng dụng: memory pool (tránh fragmentation, giảm overhead), stack allocator (cuc nhanh), logging/debug allocator, shared-memory allocator (IPC).
+- VI: STL container nhận custom allocator template parameter để kiểm soát cách cấp phát/giải phóng memory. Ứng dụng: memory pool (tránh fragmentation, giảm overhead), stack allocator (cuc nhanh), logging/debug allocator, shared-memory allocator (IPC).
 
 ```cpp
 template<typename T>
@@ -321,7 +321,7 @@ std::vector<int, MyAllocator<int>> v;
 ```
 
 - EN: C++17 introduced `std::pmr::polymorphic_allocator` — type-erased allocators that can be switched at runtime.
-- VI: C++17 gioi thieu `std::pmr::polymorphic_allocator` — type-erased allocator có thể đổi lúc runtime.
+- VI: C++17 giới thiệu `std::pmr::polymorphic_allocator` — type-erased allocator có thể đổi lúc runtime.
 
 Follow-up (EN): What is the difference between `std::allocator` and `std::pmr::polymorphic_allocator`?
 

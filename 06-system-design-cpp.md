@@ -41,12 +41,12 @@ A: C ABI ổn định hon, để binding sáng ngon ngu khác và tránh ABI fra
 A: Proto/FlatBuffers/Cấp'n Proto tuy cần bảng schema evolution, speed, zero-copy.
 
 ### Q9. Batch vs streaming pipeline?
-A: Batch để quản lý đơn gìản, streaming cho low-latency. Nhiều hệ thống hybrid.
+A: Batch để quản lý đơn giản, streaming cho low-latency. Nhiều hệ thống hybrid.
 
 ## 4) Reliability
 
 ### Q10. Circuit breaker/retry/backoff trong service C++?
-A: Phải có timeout rõ rang, retry idempotent, exponential backoff + jitter.
+A: Phải có timeout rõ ràng, retry idempotent, exponential backoff + jitter.
 
 ### Q11. Idempotency key dùng để làm gì?
 A: Tránh xử lý trung request khi retry/network duplicate.

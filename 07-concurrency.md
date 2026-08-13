@@ -33,7 +33,7 @@ Follow-up (EN): What happens if a `std::thread` object is destroyed without call
 
 **A:**
 - EN: `std::mutex` provides mutual exclusion. Never lock/unlock manually — use RAII wrappers: `lock_guard` (simple, scope-based), `unique_lock` (flexible, can unlock early, works with condition_variable), `scoped_lock` (C++17, locks multiple mutexes deadlock-free).
-- VI: `std::mutex` cũng cấp mutual exclusion. không báo gio lock/unlock thủ công — dùng RAII wrapper: `lock_guard` (đơn gìản, theo scope), `unique_lock` (linh hoạt, unlock sớm, dùng với condition_variable), `scoped_lock` (C++17, lock nhiều mutex không deadlock).
+- VI: `std::mutex` cung cấp mutual exclusion. không báo gio lock/unlock thủ công — dùng RAII wrapper: `lock_guard` (đơn giản, theo scope), `unique_lock` (linh hoạt, unlock sớm, dùng với condition_variable), `scoped_lock` (C++17, lock nhiều mutex không deadlock).
 
 ```cpp
 // lock_guard: simplest RAII
@@ -57,7 +57,7 @@ Follow-up (EN): What is the difference between `std::mutex`, `std::recursive_mut
 
 **A:**
 - EN: `atomic<T>` ensures **indivisible read-modify-write** operations without needing a mutex. Use for simple counters, flags, and lock-free algorithms. Key operation: **CAS (Compare-And-Swap)** via `compare_exchange_strong/weak` — the foundation of all lock-free data structures.
-- VI: `atomic<T>` đảm bảo **read-modify-write indivisible** mà không cần mutex. Dùng cho counter, flag đơn gìản, và lock-free algorithm. Phep tinh chính: **CAS (Compare-And-Swap)** qua `compare_exchange_strong/weak` — nên tăng của mọi lock-free data structure.
+- VI: `atomic<T>` đảm bảo **read-modify-write indivisible** mà không cần mutex. Dùng cho counter, flag đơn giản, và lock-free algorithm. Phep tinh chính: **CAS (Compare-And-Swap)** qua `compare_exchange_strong/weak` — nên tăng của mọi lock-free data structure.
 
 ```cpp
 std::atomic<int> counter{0};
@@ -80,7 +80,7 @@ Follow-up (EN): What is the difference between `compare_exchange_weak` and `comp
 
 **A:**
 - EN: Memory ordering controls **visibility guarantees** between threads. CPUs and compilers reorder operations for performance. From strongest (slowest) to weakest (fastest): `seq_cst` (default, total order) → `acq_rel` → `release`/`acquire` (publish-subscribe pattern) → `relaxed` (atomicity only, nó ordering).
-- VI: Memory ordering kiểm soat **đảm bảo khả năng thay** giữa các thread. CPU và compiler reorder operations để tối ưu. Từ mạnh nhất (chậm nhất) đến yếu nhất (nhanh nhất): `seq_cst` (mặc định, total order) → `acq_rel` → `release`/`acquire` (publish-subscribe pattern) → `relaxed` (chi atomicity, không ordering).
+- VI: Memory ordering kiểm soát **đảm bảo khả năng thay** giữa các thread. CPU và compiler reorder operations để tối ưu. Từ mạnh nhất (chậm nhất) đến yếu nhất (nhanh nhất): `seq_cst` (mặc định, total order) → `acq_rel` → `release`/`acquire` (publish-subscribe pattern) → `relaxed` (chi atomicity, không ordering).
 
 ```cpp
 // Acquire-Release pattern (most common)
@@ -139,7 +139,7 @@ Follow-up (EN): What is a spurious wakeup and why do we need a predicate?
 
 **A:**
 - EN: **Deadlock**: two or more threads wait for each other's locks — nó progress possible. Prevention: (1) always lock in the same order, (2) use `std::scoped_lock` for multiple mutexes, (3) avoid nested locking, (4) use try-lock with timeout.
-- VI: **Deadlock**: hai hay nhiều thread cho nhau gìải phóng lock — không ai tien được. Phong tránh: (1) luôn lock theo cũng thứ tự, (2) dùng `std::scoped_lock` cho nhiều mutex, (3) tránh nested locking, (4) dùng try-lock với timeout.
+- VI: **Deadlock**: hai hay nhiều thread cho nhau giải phóng lock — không ai tien được. Phong tránh: (1) luôn lock theo cũng thứ tự, (2) dùng `std::scoped_lock` cho nhiều mutex, (3) tránh nested locking, (4) dùng try-lock với timeout.
 
 ```cpp
 // Deadlock:
@@ -193,7 +193,7 @@ Follow-up (EN): How does ThreadSanitizer (TSan) detect data races?
 
 **A:**
 - EN: A **promise-future** pair is a one-shot channel for passing a result between threads. The producer sets the value via `promise::set_value()`; the consumer retrieves it via `future::get()` (blocks until ready). `std::async` is the simplest way to get a future.
-- VI: Cấp **promise-future** là kênh một chiều để truyen kết quả giữa thread. Producer set giá trị qua `promise::set_value()`; consumer lấy qua `future::get()` (block cho đến khi có). `std::async` là cách đơn gìản nhất để lấy future.
+- VI: Cấp **promise-future** là kênh một chiều để truyền kết quả giữa thread. Producer set giá trị qua `promise::set_value()`; consumer lấy qua `future::get()` (block cho đến khi có). `std::async` là cách đơn giản nhất để lấy future.
 
 ```cpp
 // std::async: simplest

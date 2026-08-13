@@ -43,7 +43,7 @@ A: `unique_ptr` ownership đọc quyền, nhe. `shared_ptr` đệm tham chiếu,
 A: Phá vong tham chiếu khi dùng `shared_ptr`, truy cập an toàn qua `lock()`.
 
 ### Q11. Tại sao không nên truyen `shared_ptr` boi value mọi nơi?
-A: Tăng/gìảm refcount thường xuyen, tiếp tay ownership mo ho. Nên truyen `T&`, `T*`, hoặc `const shared_ptr<T>&` tuy y do.
+A: Tăng/giảm refcount thường xuyen, tiếp tay ownership mo ho. Nên truyen `T&`, `T*`, hoặc `const shared_ptr<T>&` tuy y do.
 
 ### Q12. RAII là gì?
 A: Resource Acquisition Is Initialization. Gần resource vào object life-time để tự động release trong destructor.
@@ -65,7 +65,7 @@ A: Không nên. Destructor nên `noexcept`; throw trong stack unwinding có th�
 A: Instantiate tại compile-time, có thể làm tăng binary size. Giảm bảng type erasure, explicit instantiation, giảm duplicate.
 
 ### Q17. SFINAE là gì?
-A: Substitution Failure Is Not An Error: thay thể template fail thì bỏ qua overload thay vì lỗi.
+A: Substitution Failure Is Not An Error: thay thế template fail thì bỏ qua overload thay vì lỗi.
 
 ### Q18. `constexpr` và `consteval`?
 A: `constexpr` có thể tinh compile-time nếu đủ điều kiện. `consteval` bắt buộc compile-time.
@@ -84,10 +84,10 @@ A: Rõ precondition, dùng type mạnh (`span`, `string_view` cần than life-ti
 A: Gần như luôn ưu tiên smart pointer/container. Raw `new/delete` chỉ dùng o low-level allocator/framework.
 
 ### Q22. `dynamic_cast` có xấu không?
-A: Không xấu nếu dùng dùng muc. Nhiều `dynamic_cast` có thể là đầu hiểu model dữ liệu/OOP chưa tối ưu.
+A: Không xấu nếu dùng dùng muc. Nhiều `dynamic_cast` có thể là dấu hiệu model dữ liệu/OOP chưa tối ưu.
 
 ### Q23. Có nên inline mọi thu?
 A: Không. Compiler từ quyết định inline tối ưu. `inline` chu yếu cho ODR/linkage với function trong header.
 
 ### Q24. PIMPL trade-off?
-A: Giảm rebuild, ẩn implementation, ổn định ABI; đổi lai tăng indirection + cấp phát đóng.
+A: Giảm rebuild, ẩn implementation, ổn định ABI; đổi lại tăng indirection + cấp phát đóng.

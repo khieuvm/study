@@ -8,7 +8,7 @@
 
 **A:**
 - EN: An **rvalue** is a temporary with no name. An **rvalue reference** (`T&&`) allows "stealing" its resources instead of copying — O(1) vs O(n). The move constructor takes ownership of the source's internal buffer and leaves the source in a valid-but-unspecified state.
-- VI: **Rvalue** là giá trị tạm thoi không có ten. **Rvalue reference** (`T&&`) cho phép "cuop" resource thay vì copy — O(1) thay vì O(n). Move constructor lấy ownership buffer nội bộ và để source o trang thai valid-but-unspecified.
+- VI: **Rvalue** là giá trị tạm thời không có tên. **Rvalue reference** (`T&&`) cho phép "cướp" resource thay vì copy — O(1) thay vì O(n). Move constructor lấy ownership buffer nội bộ và để source o trang thai valid-but-unspecified.
 
 ```cpp
 std::string s1 = "hello";
@@ -28,7 +28,7 @@ public:
 ```
 
 - EN: Move is triggered automatically for: returned locals (NRVO or move), rvalue arguments, and explicit `std::move`.
-- VI: Move tự động xảy ra khi: return local (NRVO hoặc move), argument là rvalue, và `std::move` tường mình.
+- VI: Move tự động xảy ra khi: return local (NRVO hoặc move), argument là rvalue, và `std::move` tường minh.
 
 Follow-up (EN): What happens if a move constructor is not `noexcept`?
 
@@ -38,7 +38,7 @@ Follow-up (EN): What happens if a move constructor is not `noexcept`?
 
 **A:**
 - EN: `auto` tells the compiler to **deduce the type** from the initializer, following the same rules as template type deduction. Important: `auto` drops `const` and references by default — use `auto&`, `const auto&`, or `auto&&` to preserve them.
-- VI: `auto` báo compiler **suy dien kiểu** từ bieu thực khởi tạo, theo cũng quy tắc như template type deduction. Quan trọng: `auto` bỏ `const` và reference mặc định — dùng `auto&`, `const auto&`, hoặc `auto&&` để giữ chung.
+- VI: `auto` báo compiler **suy diễn kiểu** từ biểu thức khởi tạo, theo cùng quy tắc như template type deduction. Quan trọng: `auto` bỏ `const` và reference mặc định — dùng `auto&`, `const auto&`, hoặc `auto&&` để giữ chung.
 
 ```cpp
 auto x = 42;           // int
@@ -61,7 +61,7 @@ Follow-up (EN): What is the difference between `auto` and `decltype(auto)`?
 
 **A:**
 - EN: A lambda is an **anonymous function object** that can capture variables from its enclosing scope. Capture modes: `[x]` by value (copy), `[&x]` by reference, `[=]` all by value, `[&]` all by reference. Use `mutable` keyword to modify captured copies.
-- VI: Lambda là **anonymous function object** có thể capture biến từ scope báo quanh. Capture mode: `[x]` by value (copy), `[&x]` by reference, `[=]` tất cả by value, `[&]` tất cả by reference. Dùng `mutable` để thay đổi captured copy.
+- VI: Lambda là **anonymous function object** có thể capture biến từ scope bao quanh. Capture mode: `[x]` by value (copy), `[&x]` by reference, `[=]` tất cả by value, `[&]` tất cả by reference. Dùng `mutable` để thay đổi captured copy.
 
 ```cpp
 int x = 10, y = 20;
@@ -88,7 +88,7 @@ Follow-up (EN): What is a lambda's closure type and how does the compiler implem
 
 **A:**
 - EN: `nullptr` is a keyword of type `std::nullptr_t` — it's type-safe for pointer contexts. `NULL` is a macro that expands to `0` (an integer), causing ambiguity in overload resolution.
-- VI: `nullptr` là keyword kiểu `std::nullptr_t` — type-safe cho pointer. `NULL` là macro = `0` (integer), gây nham lan trong overload resolution.
+- VI: `nullptr` là keyword kiểu `std::nullptr_t` — type-safe cho pointer. `NULL` là macro = `0` (integer), gây nhầm lẫn trong overload resolution.
 
 ```cpp
 void f(int x)   { printf("int\n"); }
@@ -106,7 +106,7 @@ Follow-up (EN): Can `nullptr` be implicitly converted to `bool`? (Yes — it con
 
 **A:**
 - EN: Brace initialization `{}` works for all types and **prevents narrowing conversions** (e.g., `int x{3.14}` is an error). Downside: when a constructor accepts `initializer_list`, braces prefer it — causing surprising behavior like `vector<int>{10, 5}` creating 2 elements instead of 10 copies of 5.
-- VI: Khởi tạo bảng `{}` hoạt động với mọi kiểu và **ngan narrowing conversion** (VD: `int x{3.14}` là lỗi). Nhược điểm: khi constructor nhận `initializer_list`, `{}` ưu tiên no — gây bắt ngo như `vector<int>{10, 5}` tạo 2 phần tử thay vì 10 bản sao của 5.
+- VI: Khởi tạo bằng `{}` hoạt động với mọi kiểu và **ngăn narrowing conversion** (VD: `int x{3.14}` là lỗi). Nhược điểm: khi constructor nhận `initializer_list`, `{}` ưu tiên no — gây bắt ngo như `vector<int>{10, 5}` tạo 2 phần tử thay vì 10 bản sao của 5.
 
 ```cpp
 int a{3.14};    // ERROR: narrowing
@@ -126,7 +126,7 @@ Follow-up (EN): When should you use `()` vs `{}` initialization?
 
 **A:**
 - EN: **No.** `std::move` is just a **cast to rvalue reference** — it doesn't move anything. The actual move happens when a move constructor or move assignment operator receives that rvalue reference. After the move, the source is in a valid-but-unspecified state.
-- VI: **Không.** `std::move` chỉ là **cast sáng rvalue reference** — không move gì ca. Viec move thực sự xảy ra khi move constructor hoặc move assignment operator nhận rvalue reference do. Sau move, source o trang thai valid-but-unspecified.
+- VI: **Không.** `std::move` chỉ là **cast sang rvalue reference** — không move gì cả. Việc move thực sự xảy ra khi move constructor hoặc move assignment operator nhận rvalue reference do. Sau move, source o trang thai valid-but-unspecified.
 
 ```cpp
 std::string s = "hello";
@@ -145,7 +145,7 @@ Follow-up (EN): Does `std::move` on a `const` object actually move? (No — a co
 
 **A:**
 - EN: C++17 structured bindings allow **unpacking** structs, pairs, tuples, and arrays into named variables in a single declaration. Works with `auto`, `auto&`, and `const auto&`.
-- VI: C++17 structured bindings cho phép **unpack** struct, pair, tuple, và array vào các biến có ten trong 1 khai báo. Hoạt động với `auto`, `auto&`, và `const auto&`.
+- VI: C++17 structured bindings cho phép **unpack** struct, pair, tuple, và array vào các biến có tên trong 1 khai báo. Hoạt động với `auto`, `auto&`, và `const auto&`.
 
 ```cpp
 // Pair
@@ -170,7 +170,7 @@ Follow-up (EN): Can structured bindings be used with classes that have private m
 
 **A:**
 - EN: `if constexpr` is a **compile-time if** — the false branch is completely discarded and doesn't need to be valid for the given template type. Unlike runtime `if`, it can branch on type traits without generating invalid code paths.
-- VI: `if constexpr` là **compile-time if** — nhanh sai bi bỏ hoàn toàn và không cần hợp le cho kiểu template đang dùng. Khác runtime `if`, nó có thể chia nhanh theo type traits mà không sinh code không hợp le.
+- VI: `if constexpr` là **compile-time if** — nhánh sai bị bỏ hoàn toàn và không cần hợp lệ cho kiểu template đang dùng. Khác runtime `if`, nó có thể chia nhanh theo type traits mà không sinh code không hợp lệ.
 
 ```cpp
 template<typename T>
@@ -193,7 +193,7 @@ Follow-up (EN): Can `if constexpr` be used outside of templates?
 
 **A:**
 - EN: A standard cross-platform API for file system operations: checking existence, creating/removing directories, copying files, iterating directories, and path manipulation. Replaces platform-specific code (`stat`, `opendir`, `FindFirstFile`).
-- VI: API chuan đã nên tăng cho thao tac file system: kiểm tra tồn tại, tạo/xóa thư mục, copy file, duyet thư mục, và xử lý đường dẫn. Thay thể code platform-specific (`stat`, `opendir`, `FindFirstFile`).
+- VI: API chuẩn đã nền tảng cho thao tác file system: kiểm tra tồn tại, tạo/xóa thư mục, copy file, duyệt thư mục, và xử lý đường dẫn. Thay thể code platform-specific (`stat`, `opendir`, `FindFirstFile`).
 
 ```cpp
 namespace fs = std::filesystem;
@@ -222,7 +222,7 @@ Follow-up (EN): What are the error handling options for `std::filesystem` functi
 
 **A:**
 - EN: See 04-cpp-templates.md Q10 for detailed coverage. Concepts are **named constraints** on template parameters with clean syntax and clear error messages.
-- VI: Xem 04-cpp-templates.md Q10 để có nội dung chi tiết. Concepts là **named constraints** cho template parameter với cũ phap sach và lỗi báo rõ rang.
+- VI: Xem 04-cpp-templates.md Q10 để có nội dung chi tiết. Concepts là **named constraints** cho template parameter với cú pháp sạch và lỗi báo rõ ràng.
 
 ---
 
@@ -230,7 +230,7 @@ Follow-up (EN): What are the error handling options for `std::filesystem` functi
 
 **A:**
 - EN: Coroutines are functions that can **suspend** (`co_await`, `co_yield`) and **resume** later without blocking the thread. They enable lazy generators, async I/O, and cooperative multitasking. C++20 provides low-level machinery; frameworks like cppcoro provide high-level abstractions.
-- VI: Coroutines là hàm có thể **tạm dùng** (`có_await`, `có_yield`) và **tiếp tục** sau do mà không block thread. Cho phép lazy generator, async I/O, và cooperative multitasking. C++20 cũng cấp cơ chế muc thấp; framework như cppcoro cũng cấp abstraction muc cao.
+- VI: Coroutines là hàm có thể **tạm dùng** (`có_await`, `có_yield`) và **tiếp tục** sau do mà không block thread. Cho phép lazy generator, async I/O, và cooperative multitasking. C++20 cung cấp cơ chế muc thấp; framework như cppcoro cung cấp abstraction muc cao.
 
 ```cpp
 // Generator: yields values one at a time
@@ -258,7 +258,7 @@ Follow-up (EN): What is the difference between stackful and stackless coroutines
 
 **A:**
 - EN: Ranges provide **lazy, composable** pipeline operations on sequences via the pipe (`|`) operator. Views are lazy — nó intermediate containers are created. Range algorithms accept containers directly (no `.begin()/.end()` needed).
-- VI: Ranges cũng cấp **lazy, composable** pipeline operations trên sequence qua toan từ pipe (`|`). View là lazy — không tạo container trung gian. Range algorithms nhận container trực tiếp (không cần `.begin()/.end()`).
+- VI: Ranges cung cấp **lazy, composable** pipeline operations trên sequence qua toan từ pipe (`|`). View là lazy — không tạo container trung gian. Range algorithms nhận container trực tiếp (không cần `.begin()/.end()`).
 
 ```cpp
 std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -301,7 +301,7 @@ Follow-up (EN): How do you make `std::format` work with a custom class?
 
 **A:**
 - EN: `std::function<Sig>` is a **type-erased callable wrapper** — can store any callable matching the signature (lambda, function pointer, functor). Cost: dynamic dispatch (like virtual call) + possible heap allocation for large captures. Prefer templates for performance-critical code.
-- VI: `std::function<Sig>` là **type-erased callable wrapper** — lưu được bất kỳ callable khop signature (lambda, function pointer, functor). Chi phí: dynamic dispatch (như virtual call) + có thể heap allocation cho capture lớn. Ưu tiên template cho code cần performance.
+- VI: `std::function<Sig>` là **type-erased callable wrapper** — lưu được bất kỳ callable khớp signature (lambda, function pointer, functor). Chi phí: dynamic dispatch (như virtual call) + có thể heap allocation cho capture lớn. Ưu tiên template cho code cần performance.
 
 ```cpp
 std::function<int(int, int)> f;
