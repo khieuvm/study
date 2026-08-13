@@ -1,23 +1,23 @@
-# 04 - C++ Templates & Generic Programming
+# 04 - C++ Templates & Generic Programming — Bilingual VI/EN
 
 ---
 
-## 1) Template Co Ban
+## 1) Template Cơ bản
 
-### Q1. Function template va class template khac nhau the nao?
+### Q1. Function template và class template khác nhau thế nào?
 
 **A:**
+- EN: Function templates can deduce template arguments from call arguments; class templates require explicit types (until C++17 CTAD). Function templates cannot be partially specialized; class templates can.
+- VI: Function template có thể suy dien kiểu từ argument khi gọi; class template phải chỉ rõ kiểu (cho đến C++17 CTAD). Function template không thể partial specialization; class template thì có.
 
 ```cpp
-// Function template: suy dien kieu tu argument
+// Function template: type deduced from arguments
 template<typename T>
 T max_val(T a, T b) { return a > b ? a : b; }
+max_val(3, 5);          // T = int (deduced)
+max_val<long>(3, 5);    // T = long (explicit)
 
-max_val(3, 5);          // T = int, suy dien tu dau vao
-max_val(3.0, 5.0);      // T = double
-max_val<long>(3, 5);    // explicit: T = long
-
-// Class template: phai chi ro kieu (tru C++17 deduction guide)
+// Class template: must specify type (pre-C++17)
 template<typename T>
 class Stack {
     std::vector<T> data_;
@@ -25,19 +25,20 @@ public:
     void push(const T& x) { data_.push_back(x); }
     T    pop()             { T v = data_.back(); data_.pop_back(); return v; }
 };
-
-Stack<int>    si;    // phai chi ro <int>
-Stack<double> sd;
-// C++17: Stack s{3}; // deduction guide co the suy dien
+Stack<int> si;       // must specify <int>
+// C++17: Stack s{3}; // CTAD deduces Stack<int>
 ```
+
+Follow-up (EN): What is CTAD (Class Template Argument Deduction) and when does it fail?
 
 ---
 
-### Q2. Template specialization la gi? Full vs Partial?
+### Q2. Template specialization là gì? Full vs Partial?
 
-**A:** Cho phep cung cap implementation **dac biet** cho mot kieu cu the.
+**A:**
+- EN: Template specialization provides a **custom implementation** for specific types. **Full specialization** matches exactly one type. **Partial specialization** matches a family of types (only for class templates, not function templates).
+- VI: Template specialization cũng cấp **implementation riêng** cho các kiểu cụ thể. **Full specialization** khop dùng 1 kiểu. **Partial specialization** khop 1 ho kiểu (chi ap dùng cho class template, không cho function template).
 
-**Full specialization** — cho dung 1 kieu:
 ```cpp
 // Primary template
 template<typename T>
@@ -45,256 +46,208 @@ struct Serialize {
     static std::string to_string(T val) { return std::to_string(val); }
 };
 
-// Full specialization cho bool
+// Full specialization for bool
 template<>
 struct Serialize<bool> {
     static std::string to_string(bool val) { return val ? "true" : "false"; }
 };
 
-// Full specialization cho const char*
-template<>
-struct Serialize<const char*> {
-    static std::string to_string(const char* val) { return val; }
+// Partial specialization: when T is a pointer
+template<typename T>
+struct Serialize<T*> {
+    static std::string to_string(T* val) { return val ? Serialize<T>::to_string(*val) : "null"; }
 };
 ```
 
-**Partial specialization** — cho 1 lop kieu (chi voi class template):
-```cpp
-// Primary
-template<typename T, typename U>
-struct Pair { ... };
-
-// Partial: khi ca hai kieu giong nhau
-template<typename T>
-struct Pair<T, T> { ... };   // dung khi A == B
-
-// Partial: khi T la pointer
-template<typename T>
-struct Pair<T*, T*> { ... };
-```
+Follow-up (EN): Why can't function templates be partially specialized? (Use overloading instead.)
 
 ---
 
 ### Q3. Typename vs Class trong template parameter?
 
-**A:** Trong template parameter, `typename` va `class` **hoan toan giong nhau**:
+**A:**
+- EN: In a template parameter list, `typename` and `class` are **identical**. However, `typename` has a second use: disambiguating **dependent types** inside template bodies — telling the compiler that a name is a type, not a value.
+- VI: Trong template parameter list, `typename` và `class` **giống hoàn toàn**. Tuy nhien, `typename` còn dùng để chỉ rõ **dependent type** trong than template — báo compiler ten do là kiểu, không phải giá trị.
 
 ```cpp
 template<typename T> void f(T x);   // OK
-template<class    T> void f(T x);   // OK, y het
+template<class    T> void f(T x);   // identical
 
-// Khac nhau: 'typename' con dung de chi ro dependent type
+// Second use of typename: disambiguating dependent type
 template<typename T>
 void foo() {
-    typename T::value_type x;   // "typename" can thiet vi T::value_type la dependent type
-    // T::value_type co the la static member, khong phai type
-    // "typename" bao compiler "day la kieu"
+    typename T::value_type x;   // required: T::value_type could be a static member
 }
 ```
 
+Follow-up (EN): When is the `template` keyword needed to disambiguate in a similar way?
+
 ---
 
-## 2) SFINAE va Type Traits
+## 2) SFINAE và Type Traits
 
-### Q4. SFINAE la gi? Dung de lam gi?
+### Q4. SFINAE là gì? Dùng để làm gì?
 
-**A:** **SFINAE = Substitution Failure Is Not An Error.** Khi compiler thu substitute type vao template, neu bi loi, no **khong bao loi** ma chi loai template do khoi overload set.
+**A:**
+- EN: **SFINAE (Substitution Failure Is Not An Error)**: when the compiler substitutes types into a template and the result is invalid, that template is silently removed from the overload set instead of causing a compile error. This enables compile-time conditional function selection.
+- VI: **SFINAE**: khi compiler substitute kiểu vào template mà kết quả không hợp le, template do bi loại âm thầm khoi overload set thay vì báo lỗi. Dieu này cho phép chon hàm có điều kiện tại compile time.
 
 ```cpp
-// Chi enable neu T co member type `value_type`
+// Only enabled if T has value_type member
 template<typename T>
-typename T::value_type sum(T container) {  // Neu T khong co value_type -> substitution failure
+typename T::value_type sum(T container) {
     typename T::value_type total{};
     for (auto& x : container) total += x;
     return total;
 }
 
-sum(std::vector<int>{1,2,3});   // OK: vector co value_type
-sum(42);                         // Khong chon ham nay (substitution failure), tim ham khac
+sum(std::vector<int>{1,2,3});   // OK: vector has value_type
+sum(42);                         // SFINAE: silently excluded, looks for another overload
 ```
 
-**SFINAE voi `std::enable_if`:**
 ```cpp
-// Chi enable cho integral types
+// SFINAE with std::enable_if
 template<typename T>
 std::enable_if_t<std::is_integral_v<T>, T>
 double_it(T x) { return x * 2; }
 
-// Chi enable cho floating point
 template<typename T>
 std::enable_if_t<std::is_floating_point_v<T>, T>
 double_it(T x) { return x * 2.0; }
-
-double_it(5);     // goi version integral
-double_it(3.14);  // goi version floating point
-double_it("hi");  // ERROR: khong co version nao match
 ```
+
+Follow-up (EN): What is the difference between "hard errors" and SFINAE-friendly errors?
 
 ---
 
 ### Q5. `std::enable_if` vs `if constexpr` vs Concepts?
 
-**A:** Ba cach dieu kien hoa template, theo do phuc tap tang dan (hoac giam dan):
+**A:**
+- EN: Three ways to conditionally enable template code, from oldest to newest: `enable_if` (C++11, verbose but flexible), `if constexpr` (C++17, simple but single function), Concepts (C++20, cleanest syntax and best error messages).
+- VI: Ba cách điều kiện hoa template code, từ cũ đến mọi: `enable_if` (C++11, verbose nhưng linh hoạt), `if constexpr` (C++17, đơn gìản nhưng 1 hàm), Concepts (C++20, cũ phap dep nhất và lỗi báo rõ nhất).
 
-**`if constexpr` (C++17) — don gian nhat:**
 ```cpp
+// if constexpr (C++17) — simplest
 template<typename T>
 auto describe(T x) {
-    if constexpr (std::is_integral_v<T>) {
+    if constexpr (std::is_integral_v<T>)
         return "integer: " + std::to_string(x);
-    } else if constexpr (std::is_floating_point_v<T>) {
-        return "float: " + std::to_string(x);
-    } else {
-        return std::string("unknown");
-    }
+    else
+        return std::string("other");
 }
-// Nhanh, de doc, nhung van la 1 ham cho moi kieu
-```
 
-**`enable_if` (C++11) — flexible nhung verbose:**
-```cpp
+// enable_if (C++11) — verbose
 template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
 void process(T x) { printf("integral\n"); }
 
-template<typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
-void process(T x) { printf("floating\n"); }
-```
-
-**Concepts (C++20) — ro rang nhat:**
-```cpp
+// Concepts (C++20) — clearest
 template<std::integral T>
 void process(T x) { printf("integral\n"); }
-
-template<std::floating_point T>
-void process(T x) { printf("floating\n"); }
 ```
+
+Follow-up (EN): Can `if constexpr` replace all uses of `enable_if`? (No — it can't create separate overloads.)
 
 ---
 
-### Q6. Type traits pho bien nhat can biet?
+### Q6. Type traits phổ biến nhất cần biết?
 
 **A:**
+- EN: Type traits (`<type_traits>`) provide compile-time type queries and transformations. Key categories: type checking (`is_integral`, `is_pointer`), property queries (`is_const`, `is_trivially_copyable`), type transformations (`remove_const`, `decay`), and conditionals (`conditional`).
+- VI: Type traits (`<type_traits>`) cũng cấp truy van và biến đổi kiểu tại compile time. Các nhóm chính: kiểm tra kiểu (`is_integral`, `is_pointer`), thuoc tinh (`is_const`, `is_trivially_copyable`), biến đổi kiểu (`remove_const`, `decay`), và điều kiện (`conditional`).
 
 ```cpp
 #include <type_traits>
 
-// Kiem tra kieu
-std::is_integral_v<int>          // true
-std::is_floating_point_v<double> // true
-std::is_pointer_v<int*>          // true
-std::is_reference_v<int&>        // true
-std::is_class_v<std::string>     // true
-std::is_same_v<int, int32_t>     // phu thuoc ABI, thuong true
+// Type checks
+std::is_integral_v<int>              // true
+std::is_floating_point_v<double>     // true
+std::is_pointer_v<int*>              // true
+std::is_same_v<int, int32_t>         // usually true
 
-// Kiem tra properties
-std::is_const_v<const int>       // true
-std::is_trivial_v<int>           // true (co the memcpy)
-std::is_trivially_copyable_v<T>  // true -> safe to memcpy
+// Property queries
+std::is_trivially_copyable_v<T>      // true -> safe to memcpy
 std::is_default_constructible_v<T>
-std::is_copy_constructible_v<T>
-std::is_move_constructible_v<T>
 
-// Bien doi kieu
-std::remove_const_t<const int>   // int
-std::remove_reference_t<int&>    // int
-std::remove_pointer_t<int*>      // int
-std::add_const_t<int>            // const int
-std::decay_t<int[5]>             // int*  (giong array decay)
-std::decay_t<int&>               // int
+// Type transformations
+std::remove_const_t<const int>       // int
+std::remove_reference_t<int&>        // int
+std::decay_t<int[5]>                 // int*
+std::decay_t<int&>                   // int
 
 // Conditional
 std::conditional_t<true, int, double>   // int
-std::conditional_t<false, int, double>  // double
 ```
+
+Follow-up (EN): What does `std::is_trivially_copyable` guarantee and why is it important for serialization?
 
 ---
 
 ## 3) Variadic Templates
 
-### Q7. Variadic template la gi? Parameter pack la gi?
+### Q7. Variadic template là gì? Parameter pack là gì?
 
-**A:** Variadic template cho phep ham/class nhan **bat ky so luong tham so** cua bat ky kieu.
+**A:**
+- EN: Variadic templates accept **any number of arguments** of any types via parameter packs (`typename... Args`). Before C++17, expansion used recursion; C++17 introduced **fold expressions** for concise expansion.
+- VI: Variadic template nhận **bất kỳ số luồng argument** của bất kỳ kiểu qua parameter pack (`typename... Args`). Trước C++17, mở rộng dùng đệ quy; C++17 gioi thieu **fold expression** để mở rộng gọn hơn.
 
 ```cpp
-// Ham in tat ca tham so
-template<typename... Args>    // Args la parameter pack
-void print_all(Args&&... args) {   // args la pack cua values
-    // Expand pack voi fold expression (C++17):
+// C++17 fold expression
+template<typename... Args>
+void print_all(Args&&... args) {
     ((std::cout << args << " "), ...);
     std::cout << "\n";
 }
+print_all(1, 2.0, "hello", true);
 
-print_all(1, 2.0, "hello", true);  // OK: 4 tham so khac kieu
-print_all();                        // OK: 0 tham so
-```
-
-**Dem so phan tu:**
-```cpp
+// Count elements
 template<typename... T>
-constexpr size_t count() { return sizeof...(T); }  // sizeof... operator
+constexpr size_t count() { return sizeof...(T); }
 
-count<int, double, char>();  // 3
-```
-
-**Recursive expansion (truoc C++17):**
-```cpp
-// Base case
-void log() {}
-
-// Recursive case
+// Recursive expansion (pre-C++17)
+void log() {}  // base case
 template<typename T, typename... Rest>
 void log(T first, Rest... rest) {
     std::cout << first << " ";
-    log(rest...);  // goi voi pack nho di 1
+    log(rest...);
 }
-log(1, 2.0, "three");  // in: 1 2 three
 ```
 
-**Fold expressions (C++17) — ngan gon hon:**
 ```cpp
+// Fold expressions (C++17)
 template<typename... T>
-auto sum(T... args) {
-    return (args + ...);     // unary right fold: a + (b + (c + d))
-    // hoac: (... + args)    // unary left fold: ((a + b) + c) + d
-    // hoac: (args + ... + 0) // binary fold voi init
-}
+auto sum(T... args) { return (args + ...); }   // right fold
 sum(1, 2, 3, 4);  // 10
 ```
 
+Follow-up (EN): What are the four forms of fold expressions (unary/binary, left/right)?
+
 ---
 
-### Q8. Perfect forwarding va `std::forward` la gi?
+### Q8. Perfect forwarding và `std::forward` là gì?
 
-**A:** Khi truyen argument qua nhieu lop ham, muon giu nguyen **value category** (lvalue/rvalue). `std::forward` thuc hien dieu do.
+**A:**
+- EN: Perfect forwarding preserves the **value category** (lvalue/rvalue) of arguments when passing them through template functions. `T&&` in a template is a **forwarding reference** (not an rvalue reference). `std::forward<T>(arg)` casts back to the original category.
+- VI: Perfect forwarding báo toan **value category** (lvalue/rvalue) của argument khi truyen qua template function. `T&&` trong template là **forwarding reference** (không phải rvalue reference). `std::forward<T>(arg)` cast ve category ban đầu.
 
 ```cpp
-// Van de khong co perfect forwarding:
+// Without forwarding: rvalue becomes lvalue
 template<typename T>
-void wrapper(T arg) {
-    foo(arg);   // arg luon la lvalue du T la rvalue!
+void wrapper(T arg) { foo(arg); }  // arg is always lvalue!
+
+// With perfect forwarding
+template<typename T>
+void wrapper(T&& arg) {
+    foo(std::forward<T>(arg));     // preserves lvalue/rvalue
 }
 
-std::string s = "hello";
-wrapper(s);              // foo nhan lvalue OK
-wrapper(std::string("hi")); // foo van nhan lvalue (mat rvalue optimization!)
-
-// Giai phap: perfect forwarding
-template<typename T>
-void wrapper(T&& arg) {            // T&& la "forwarding reference" (universal ref)
-    foo(std::forward<T>(arg));     // giu nguyen lvalue/rvalue
-}
-// Khi T = lvalue ref:   T&& = A& &&  = A&   -> forward nhu lvalue
-// Khi T = non-ref:      T&& = A&&           -> forward nhu rvalue
-```
-
-**Ung dung pho bien:**
-```cpp
-// make_unique implementation:
+// Real-world: make_unique implementation
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 ```
+
+Follow-up (EN): What is reference collapsing and how does it enable forwarding references?
 
 ---
 
@@ -302,43 +255,41 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 
 ### Q9. `constexpr` vs template metaprogramming?
 
-**A:** Ca hai deu tinh toan tai **compile time**, nhung khac nhau ve cach viet.
+**A:**
+- EN: Both compute at compile time. Template metaprogramming (TMP) uses recursive template instantiation — powerful but hard to read. `constexpr` (C++11+) looks like normal code and is preferred. Use TMP for type-level computation; use `constexpr` for value computation.
+- VI: Cả hai đều tinh tại compile time. Template metaprogramming (TMP) dùng recursive template instantiation — mạnh nhưng kho đọc. `constexpr` (C++11+) trang như code thường và được ưu tiên. Dùng TMP cho type-level computation; dùng `constexpr` cho value computation.
 
-**Template metaprogramming (TMp) — C++03 style:**
 ```cpp
-// Fibonacci tai compile time
+// TMP (C++03 style) — hard to read
 template<int N>
 struct Fib {
     static const int value = Fib<N-1>::value + Fib<N-2>::value;
 };
 template<> struct Fib<0> { static const int value = 0; };
 template<> struct Fib<1> { static const int value = 1; };
+int x = Fib<10>::value;
 
-int x = Fib<10>::value;  // tinh tai compile time
-```
-
-**`constexpr` (C++11+) — de doc hon nhieu:**
-```cpp
+// constexpr (C++11+) — readable
 constexpr int fib(int n) {
     if (n <= 1) return n;
     return fib(n-1) + fib(n-2);
 }
-constexpr int x = fib(10);  // tinh tai compile time
-// Cung co the goi o runtime: int y = fib(n); // tinh o runtime
+constexpr int x = fib(10);  // compile-time
+int y = fib(n);              // also works at runtime
 ```
 
-**Khi nao dung TMP vs constexpr:**
-- `constexpr` de hon doc, uu tien dung
-- TMP cho type-level computation (khong co gia tri runtime)
+Follow-up (EN): What limitations does C++11 `constexpr` have that C++14/17/20 removed?
 
 ---
 
-### Q10. Concepts (C++20) la gi?
+### Q10. Concepts (C++20) là gì?
 
-**A:** Concepts la named constraints cho template parameters — lam loi bao dep hon, code ro rang hon.
+**A:**
+- EN: Concepts are **named constraints** on template parameters. They produce clear error messages (instead of pages of template substitution errors), serve as documentation, and enable overload resolution based on constraints.
+- VI: Concepts là **named constraints** cho template parameters. Chung tạo lỗi báo rõ rang (thay vì nhiều trang lỗi template substitution), làm tài liệu, và cho phép overload resolution dua trên constraints.
 
 ```cpp
-// Dinh nghia concept
+// Define concept
 template<typename T>
 concept Addable = requires(T a, T b) {
     { a + b } -> std::convertible_to<T>;
@@ -351,40 +302,31 @@ concept Container = requires(T c) {
     { c.size()  } -> std::convertible_to<std::size_t>;
 };
 
-// Dung concept
+// Use concept
 template<Addable T>
 T sum(T a, T b) { return a + b; }
 
-template<Container C>
-auto first_element(const C& c) { return *c.begin(); }
-
-// Loi bao ro rang:
-sum("hello", "world");
-// error: 'const char*' does not satisfy constraint 'Addable'
-// Thay vi: 50 dong error template substitution cu
+// Standard library concepts
+std::integral<T>            // int, long, ...
+std::floating_point<T>      // float, double
+std::same_as<T, U>          // T is same as U
+std::derived_from<T, Base>  // T inherits Base
+std::invocable<F, Args...>  // F callable with Args
 ```
 
-**Standard concepts pho bien:**
-```cpp
-std::integral<T>          // int, long, ...
-std::floating_point<T>    // float, double
-std::same_as<T, U>        // T giong U
-std::derived_from<T, Base>// T ke thua Base
-std::convertible_to<T, U> // T chuyen duoc sang U
-std::invocable<F, Args...>// F co the goi voi Args
-std::ranges::range<T>     // T la range
-```
+Follow-up (EN): How do concepts interact with overload resolution when multiple constrained overloads match?
 
 ---
 
 ## 5) Non-type Template Parameters
 
-### Q11. Non-type template parameter la gi?
+### Q11. Non-type template parameter là gì?
 
-**A:** Template parameter co the la **gia tri** thay vi kieu.
+**A:**
+- EN: Template parameters can be **values** (not just types): integers, enums, pointers, and (since C++20) floating-point and literal class types. Common use: compile-time array sizes, policy selection, fixed-point precision.
+- VI: Template parameter có thể là **giá trị** (không chi kiểu): integer, enum, pointer, và (từ C++20) floating-point và literal class type. Ứng dụng phổ biến: kích thước mạng compile-time, policy selection, fixed-point precision.
 
 ```cpp
-// Size la compile-time constant
 template<typename T, std::size_t N>
 class FixedArray {
     T data_[N];
@@ -393,29 +335,30 @@ public:
     constexpr size_t size() const { return N; }
 };
 
-FixedArray<int, 10> arr;    // 10 int tren stack, khong heap
-FixedArray<double, 3> vec;  // 3 double
-// arr.size() = 10, tinh tai compile time
+FixedArray<int, 10> arr;     // 10 ints on stack, nó heap
+FixedArray<double, 3> vec;   // 3 doubles
 
-// C++20: float, pointer, cac kieu khac cung duoc
+// C++20: floating-point NTTP
 template<double D>
 constexpr double scale(double x) { return x * D; }
-auto y = scale<2.5>(10.0);  // y = 25.0, tinh o compile time
+auto y = scale<2.5>(10.0);  // 25.0 at compile time
 ```
+
+Follow-up (EN): What types are allowed as non-type template parameters in C++20 vs C++17?
 
 ---
 
 ## Flash card
 
-| Cau hoi | Tra loi nhanh |
+| Question / Câu hỏi | Quick answer / Trả lỗi nhanh |
 |---|---|
-| SFINAE la gi? | Substitution failure -> bo qua, khong bao loi |
-| `typename` trong template body? | Truoc dependent type: `typename T::type` |
-| `sizeof...(T)` lam gi? | Dem so phan tu trong parameter pack |
-| `std::forward<T>(arg)` lam gi? | Giu nguyen lvalue/rvalue category |
-| Full vs partial specialization? | Full: 1 kieu cu the; Partial: 1 lop kieu |
-| `if constexpr` vs `enable_if`? | `if constexpr` de hon, du dung cho 1 ham |
-| Concept (C++20) uu diem? | Loi bao dep, constraint ro rang |
-| `std::decay_t<int[5]>` la gi? | `int*` (array decay) |
-| TMP vs constexpr? | constexpr de doc hon, uu tien dung |
-| Non-type template param? | Gia tri compile-time: `template<int N>` |
+| SFINAE là gì? | Substitution failure → silently excluded, not an error |
+| `typename` in template body? | Disambiguate dependent type: `typename T::type` |
+| `sizeof...(T)` does? | Count elements in parameter pack |
+| `std::forward<T>(arg)` does? | Preserves lvalue/rvalue category |
+| Full vs partial specialization? | Full: one specific type; Partial: a family of types |
+| `if constexpr` vs `enable_if`? | `if constexpr` simpler; `enable_if` for separate overloads |
+| Concepts (C++20) advantage? | Clean syntax, clear errors, constraint documentation |
+| `std::decay_t<int[5]>` result? | `int*` (array-to-pointer decay) |
+| TMP vs constexpr? | constexpr more readable; prefer it for value computation |
+| Non-type template param? | Compile-time value: `template<int N>` |

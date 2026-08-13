@@ -1,71 +1,71 @@
-# 05 - Concurrency va Memory Model (Senior)
+# 05 - Concurrency và Memory Model (Senior)
 
-## 1) Threading can ban nhung de hoi sau
+## 1) Threading cần ban nhưng để hỏi sau
 
-### Q1. Data race la gi?
-A: Hai thread truy cap cung memory location, it nhat 1 ghi, khong dong bo dung. Data race => UB.
+### Q1. Data race là gì?
+A: Hai thread truy cập cũng memory location, ít nhất 1 ghi, không đóng bỏ dùng. Data race => UB.
 
-### Q2. Race condition va data race co giong nhau?
-A: Khong. Race condition la logic phu thuoc thu tu xay ra; data race la vi pham memory model.
+### Q2. Race condition và data race có gìống nhau?
+A: Không. Race condition là logic phụ thuộc thứ tự xảy ra; data race là vì pham memory model.
 
-### Q3. `std::thread` va `std::jthread`?
-A: `jthread` (C++20) co auto-join va stop token ho tro huy cooperative.
+### Q3. `std::thread` và `std::jthread`?
+A: `jthread` (C++20) có auto-join và stop token ho tro huy cooperative.
 
 ## 2) Atomics
 
-### Q4. `std::atomic<int>` dam bao gi?
-A: Atomicity cho operation tren bien do. Khong tu dong dam bao toan bo protocol logic.
+### Q4. `std::atomic<int>` đảm bảo gì?
+A: Atomicity cho operation trên biến do. không tự động đảm bảo toan bỏ protocol logic.
 
-### Q5. Memory order co cac muc nao?
-A: `relaxed`, `consume` (it dung), `acquire`, `release`, `acq_rel`, `seq_cst`.
+### Q5. Memory order có các muc nào?
+A: `relaxed`, `consume` (it dùng), `acquire`, `release`, `acq_rel`, `seq_cst`.
 
-### Q6. Acquire/Release hieu don gian?
-A: Store-release cong bo du lieu truoc do; load-acquire nhin thay du lieu do neu dong bo thanh cong.
+### Q6. Acquire/Release hiểu đơn gìản?
+A: Store-release cổng bỏ dữ liệu trước do; load-acquire nhìn thấy dữ liệu do nếu đóng bỏ thành cổng.
 
-### Q7. Khi nao dung `relaxed`?
-A: Khi chi can atomicity cua bien dem/doc lap, khong can ordering voi du lieu khac.
+### Q7. Khi nào dùng `relaxed`?
+A: Khi chỉ cần atomicity của biến dem/độc lập, không cần ordering với dữ liệu khác.
 
-## 3) Mutex va deadlock
+## 3) Mutex và deadlock
 
-### Q8. Deadlock 4 dieu kien Coffman?
-A: Mutual exclusion, hold-and-wait, no preemption, circular wait.
+### Q8. Deadlock 4 điều kiện Coffman?
+A: Mutual exclusion, hold-and-wait, nó preemption, circular wait.
 
-### Q9. Cach tranh deadlock trong code C++?
-A: Quy uoc thu tu lock, lock hierarchy, `std::scoped_lock` lock nhieu mutex cung luc.
+### Q9. Cách tránh deadlock trong code C++?
+A: Quy uoc thứ tự lock, lock hierarchy, `std::scoped_lock` lock nhiều mutex cũng luc.
 
-### Q10. `condition_variable` co can loop khi wait?
-A: Co. Vi co spurious wakeup. Luon `wait(lock, predicate)` hoac while-check predicate.
+### Q10. `condition_variable` có cần loop khi wait?
+A: Có. Vì có spurious wakeup. Luôn `wait(lock, predicate)` hoặc while-check predicate.
 
-## 4) Lock-free can ban
+## 4) Lock-free cần ban
 
-### Q11. Lock-free co nghia la nhanh hon lock?
-A: Khong luon. Co the nhanh hon o tranh chap cao, nhung phuc tap, kho dung, co van de ABA.
+### Q11. Lock-free có nghĩa là nhanh hơn lock?
+A: Không luôn. Có thể nhanh hơn o tránh chap cao, nhưng phức tạp, kho dùng, có van để ABA.
 
-### Q12. ABA problem la gi?
-A: Gia tri A doi thanh B roi ve A, compare-exchange thay van A nen nghi khong doi, dan den loi logic.
+### Q12. ABA problem là gì?
+A: Giá trị A đổi thành B rồi ve A, compare-exchange thay van A nên nghi không đổi, dan đến lỗi logic.
 
 ## 5) Practical senior questions
 
-### Q13. Cach debug bug concurrency hiem gap?
+### Q13. Cách debug bug concurrency hiem gap?
 A:
-1. Bat TSAN.
-2. Log co timestamp/thread id.
-3. Lam test stress + deterministic scheduler (neu co).
-4. Giam chia se mutable state.
+1. Bắt TSAN.
+2. Log có timestamp/thread id.
+3. Làm test stress + deterministic scheduler (nếu có).
+4. Giảm chia sẻ mutable state.
 
-### Q14. False sharing la gi?
-A: Nhieu thread ghi vao bien khac nhau nhung cung cache line, gay ping-pong cache coherency.
+### Q14. False sharing là gì?
+A: Nhiều thread ghi vào biến khác nhau nhưng cũng cache line, gây ping-pong cache coherency.
 
-### Q15. Cach giam false sharing?
-A: Canh le/padding du lieu nong theo cache line, tach writer data structures.
+### Q15. Cách giảm false sharing?
+A: Canh le/padding dữ liệu nong theo cache line, tách writer data structures.
 
-### Q16. Thread pool tai sao huu ich?
-A: Giam chi phi tao/huy thread, gioi hanh muc concurrency, cai thien latency on dinh.
+### Q16. Thread pool tại sao huu ich?
+A: Giảm chi phí tạo/huy thread, gioi hanh muc concurrency, cai thien latency ổn định.
 
 ## 6) Muc senior leadership
 
-### Q17. Khi nao uu tien don gian hon lock-free?
-A: Mac dinh. Lock-free chi dung khi profile xac nhan lock la bottleneck nghiem trong.
+### Q17. Khi nào ưu tiên đơn gìản hon lock-free?
+A: Mặc định. Lock-free chỉ dùng khi profile xác nhận lock là bottleneck nghiêm trọng.
 
-### Q18. Cach review code concurrent cua team?
-A: Kiem tra ownership state, lock ordering, invariant duoc bao ve boi lock nao, exception path.
+### Q18. Cách review code concurrent của team?
+A: Kiểm tra ownership state, lock ordering, invariant được báo ve boi lock nào, exception path.

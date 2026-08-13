@@ -3,61 +3,61 @@
 ## 1) Container selection
 
 ### Q1. `vector` vs `list`?
-A: `vector` thuong nhanh hon thuc te nho cache locality. `list` chi co loi khi can splice/insert erase o giua voi iterator da co.
+A: `vector` thường nhanh hơn thực tế nhỏ cache locality. `list` chỉ có lỗi khi cần splice/insert erase o giữa với iterator đã có.
 
 ### Q2. `map` vs `unordered_map`?
 A:
-- `map`: O(log n), co thu tu, iter stable hon theo key order
-- `unordered_map`: trung binh O(1), khong co thu tu, phu thuoc hash/rehash
+- `map`: O(log n), có thứ tự, iter stable hon theo key order
+- `unordered_map`: trung bình O(1), không có thứ tự, phụ thuộc hash/rehash
 
-### Q3. `deque` dung khi nao?
-A: Khi can push/pop o ca dau va cuoi nhieu, va random access van can.
+### Q3. `deque` dùng khi nào?
+A: Khi cần push/pop o ca đầu và cũối nhiều, và random access van cần.
 
 ## 2) Iterator invalidation
 
-### Q4. `vector::push_back` co invalidation khong?
-A: Co the co neu reallocate; tat ca iterator/reference/pointer vao phan tu co the invalid.
+### Q4. `vector::push_back` có invalidation không?
+A: Có thể có nếu reallocate; tất cả iterator/reference/pointer vào phần tử có thể invalid.
 
-### Q5. `list` iterator co on dinh hon khong?
-A: Thuong on dinh khi insert/erase node khac, nhung iterator toi node bi erase se invalid.
+### Q5. `list` iterator có ổn định hon không?
+A: Thường ổn định khi insert/erase node khác, nhưng iterator tới node bi erase sẽ invalid.
 
 ## 3) Algorithm
 
-### Q6. Vi sao uu tien algorithm STL hon loop tay?
-A: Code ro y do, it bug, toi uu tot, de compose.
+### Q6. Vì sao ưu tiên algorithm STL hon loop tay?
+A: Code rõ y do, it bug, tối ưu tốt, để compose.
 
-### Q7. `remove` trong erase-remove idiom lam gi?
-A: `remove` chi partition va tra ve iterator moi, khong xoa size container. Can `erase` tiep.
+### Q7. `remove` trong erase-remove idiom làm gì?
+A: `remove` chi partition và trả về iterator mọi, không xóa size container. Cần `erase` tiếp.
 
 ### Q8. `stable_sort` vs `sort`?
-A: `stable_sort` giu thu tu phan tu bang nhau, doi lai ton bo nho va co the cham hon.
+A: `stable_sort` giữ thứ tự phần tử bảng nhau, đổi lai ton bộ nhớ và có thể chậm hon.
 
-### Q9. Big-O co du de du doan toc do khong?
-A: Khong du. Can tinh den constant factor, cache miss, branch misprediction, allocator cost.
+### Q9. Big-O có đủ để dự đoán toc do không?
+A: Không đủ. Cần tinh đến constant factor, cache miss, branch misprediction, allocator cost.
 
-## 4) Allocator va memory
+## 4) Allocator và memory
 
-### Q10. Polymorphic allocator (`pmr`) loi ich?
-A: Tach chinh sach cap phat khoi cau truc du lieu, toi uu theo workload (arena/monotonic).
+### Q10. Polymorphic allocator (`pmr`) lỗi ich?
+A: Tách chính sach cấp phát khoi cấu trúc dữ liệu, tối ưu theo workload (arena/monotonic).
 
-### Q11. Small string optimization (SSO) la gi?
-A: `std::string` luu chuoi ngan trong object khong cap phat heap.
+### Q11. Small string optimization (SSO) là gì?
+A: `std::string` lưu chuoi ngan trong object không cấp phát heap.
 
-## 5) Cac cau hoi danh gia senior
+## 5) Các câu hỏi danh gia senior
 
-### Q12. Tai sao `vector<bool>` gay tranh cai?
-A: Specialization bit-packed, khong true reference/pointer nhu vector thuong, han che behavior.
+### Q12. Tại sao `vector<bool>` gây tránh cai?
+A: Specialization bit-packed, không true reference/pointer như vector thường, han che behavior.
 
-### Q13. Khi nao reserve cho `vector`?
-A: Khi uoc luong duoc so phan tu de giam reallocation.
+### Q13. Khi nào reserve cho `vector`?
+A: Khi uoc luồng được số phần tử để giảm reallocation.
 
-### Q14. Co nen micro-opt algorithm som?
-A: Khong. Do profile truoc, optimize diem nong sau.
+### Q14. Có nên micro-opt algorithm sớm?
+A: Không. Do profile trước, optimize điểm nong sau.
 
-### Q15. Dung `emplace_back` luon co tot hon `push_back`?
-A: Khong luon. `emplace_back` huu ich khi tao truc tiep object; voi object da co san, khac biet co the khong dang ke.
+### Q15. Dùng `emplace_back` luôn có tốt hơn `push_back`?
+A: Không luôn. `emplace_back` huu ich khi tạo trực tiếp object; với object đã có sẵn, khác biết có thể không đang kế.
 
-## 6) Practical snippets (de tu luyen)
+## 6) Practical snippets (để từ luyen)
 
 ```cpp
 std::vector<int> v;

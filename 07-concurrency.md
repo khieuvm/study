@@ -1,388 +1,280 @@
-# 07 - Concurrency & Multi-threading
+# 07 - Concurrency & Multi-threading — Bilingual VI/EN
 
 ---
 
-## 1) Thread Co Ban
+## 1) Thread Cơ bản
 
-### Q1. `std::thread` hoat dong nhu the nao?
-
-**A:** `std::thread` wrap OS thread (pthread tren Linux, Win32 thread tren Windows).
-
-```cpp
-#include <thread>
-#include <mutex>
-
-void worker(int id) {
-    printf("Thread %d running\n", id);
-}
-
-// Tao thread
-std::thread t(worker, 42);  // start ngay lap tuc
-
-// Bat buoc phai join hoac detach truoc khi destructor chay
-t.join();     // cho thread ket thuc
-// hoac
-t.detach();   // tach ra, chay doc lap (khong the join lai)
-
-// Kiem tra
-t.joinable(); // true neu chua join/detach
-```
-
-**`std::jthread` (C++20) — tu dong join:**
-```cpp
-{
-    std::jthread t(worker, 42);
-    // Khi ra khoi scope: destructor tu dong join
-    // Khong bi std::terminate nhu std::thread
-}
-```
-
-**Truyen tham so:**
-```cpp
-void modify(int& x) { x = 99; }
-
-int val = 0;
-std::thread t(modify, std::ref(val));  // phai dung std::ref cho reference
-t.join();
-printf("%d\n", val);  // 99
-```
-
----
-
-### Q2. `std::mutex` va cac wrapper cua no?
+### Q1. `std::thread` hoạt động như thế nào?
 
 **A:**
+- EN: `std::thread` wraps an OS thread (pthread on Linux, Win32 thread on Windows). You **must** call `join()` (wait for completion) or `detach()` (run independently) before the thread object is destroyed — otherwise `std::terminate` is called. C++20's `std::jthread` auto-joins on destruction.
+- VI: `std::thread` wrap OS thread (pthread trên Linux, Win32 thread trên Windows). **Phải** gọi `join()` (cho xong) hoặc `detach()` (chạy độc lập) trước khi thread object bị destroy — nếu không `std::terminate` được gọi. C++20 `std::jthread` tự động join khi destroy.
 
 ```cpp
-std::mutex mtx;
+std::thread t(worker, 42);   // starts immediately
+t.join();                     // wait for completion
+// or: t.detach();            // run independently
 
-// Cach 1: lock/unlock thu cong (BAD: co the quen unlock khi exception)
-mtx.lock();
-// ... critical section ...
-mtx.unlock();
-
-// Cach 2: lock_guard (RAII, unlock khi ra scope)
+// C++20: auto-join
 {
-    std::lock_guard<std::mutex> guard(mtx);
-    // ... critical section ...
-}  // tu dong unlock
+    std::jthread t(worker, 42);
+}  // auto-joins here — nó std::terminate risk
 
-// Cach 3: unique_lock (flexible hon, co the unlock som, dung voi condition_variable)
-{
-    std::unique_lock<std::mutex> lock(mtx);
-    // ... critical section ...
-    lock.unlock();          // co the unlock som
-    // ... code khong can lock ...
-    lock.lock();            // co the lock lai
+// Pass by reference: must use std::ref
+int val = 0;
+std::thread t(modify, std::ref(val));
+```
+
+Follow-up (EN): What happens if a `std::thread` object is destroyed without calling `join()` or `detach()`?
+
+---
+
+### Q2. `std::mutex` và các wrapper của no?
+
+**A:**
+- EN: `std::mutex` provides mutual exclusion. Never lock/unlock manually — use RAII wrappers: `lock_guard` (simple, scope-based), `unique_lock` (flexible, can unlock early, works with condition_variable), `scoped_lock` (C++17, locks multiple mutexes deadlock-free).
+- VI: `std::mutex` cũng cấp mutual exclusion. không báo gio lock/unlock thủ công — dùng RAII wrapper: `lock_guard` (đơn gìản, theo scope), `unique_lock` (linh hoạt, unlock sớm, dùng với condition_variable), `scoped_lock` (C++17, lock nhiều mutex không deadlock).
+
+```cpp
+// lock_guard: simplest RAII
+{ std::lock_guard<std::mutex> guard(mtx); /* critical section */ }
+
+// unique_lock: flexible
+{ std::unique_lock<std::mutex> lock(mtx);
+  lock.unlock();   // can unlock early
+  lock.lock();     // re-lock
 }
 
-// Khoa nhieu mutex cung luc (tranh deadlock):
-std::mutex m1, m2;
-std::lock(m1, m2);  // lock ca hai, khong bao gio deadlock
-std::lock_guard<std::mutex> lg1(m1, std::adopt_lock);
-std::lock_guard<std::mutex> lg2(m2, std::adopt_lock);
-
-// C++17: scoped_lock (don gian hon)
-std::scoped_lock lock(m1, m2);  // lock ca hai, RAII
+// scoped_lock (C++17): multiple mutexes, deadlock-free
+std::scoped_lock lock(m1, m2);
 ```
+
+Follow-up (EN): What is the difference between `std::mutex`, `std::recursive_mutex`, and `std::timed_mutex`?
 
 ---
 
-### Q3. `std::atomic` la gi? Khi nao dung?
+### Q3. `std::atomic` là gì? Khi nào dùng?
 
-**A:** `atomic<T>` dam bao **read-modify-write** la indivisible — khong can mutex cho cac phep tinh don gian.
+**A:**
+- EN: `atomic<T>` ensures **indivisible read-modify-write** operations without needing a mutex. Use for simple counters, flags, and lock-free algorithms. Key operation: **CAS (Compare-And-Swap)** via `compare_exchange_strong/weak` — the foundation of all lock-free data structures.
+- VI: `atomic<T>` đảm bảo **read-modify-write indivisible** mà không cần mutex. Dùng cho counter, flag đơn gìản, và lock-free algorithm. Phep tinh chính: **CAS (Compare-And-Swap)** qua `compare_exchange_strong/weak` — nên tăng của mọi lock-free data structure.
 
 ```cpp
-#include <atomic>
-
 std::atomic<int> counter{0};
+counter++;                          // atomic increment
+counter.fetch_add(1);               // explicit atomic add
+int val = counter.load();           // atomic read
+counter.store(42);                  // atomic write
 
-// Thread-safe increment
-counter++;                        // atomic fetch_add
-counter.fetch_add(1);            // explicit
-counter.fetch_add(1, std::memory_order_relaxed);  // voi ordering hint
-
-// Load va store
-int val = counter.load();
-counter.store(42);
-
-// Compare-and-swap (CAS) — nen tang cua lock-free algorithms
+// CAS: foundation of lock-free algorithms
 int expected = 5;
 bool ok = counter.compare_exchange_strong(expected, 10);
-// ok = true  -> doi 5 thanh 10 thanh cong
-// ok = false -> expected duoc cap nhat bang gia tri hien tai
-
-// compare_exchange_weak: co the fail gia (spurious), dung trong vong lap
-int exp = 0;
-while (!counter.compare_exchange_weak(exp, exp + 1)) {}  // atomic increment
+// ok=true: was 5, now 10. ok=false: expected updated to actual value
 ```
 
-**Cac phep tinh atomic:**
-```cpp
-// Cho int, long, pointer, ...
-counter.fetch_add(n);
-counter.fetch_sub(n);
-counter.fetch_and(mask);
-counter.fetch_or(mask);
-counter.fetch_xor(mask);
-counter.exchange(new_val);  // set va lay gia tri cu
-```
+Follow-up (EN): What is the difference between `compare_exchange_weak` and `compare_exchange_strong`?
 
 ---
 
-### Q4. Memory order la gi? Cac gia tri?
+### Q4. Memory order là gì? Các giá trị?
 
-**A:** Memory order xac dinh **bao dam thu tu** cac memory operation giua cac threads. CPU va compiler co the reorder operations de toi uu.
-
-```
-Strongest (cha nhat)
-        |
-memory_order_seq_cst    // Sequential consistency (mac dinh)
-memory_order_acq_rel    // Acquire + Release (cho RMW ops)
-memory_order_release    // Release: writes truoc no duoc thay
-memory_order_acquire    // Acquire: reads sau no thay duoc writes truoc release
-memory_order_consume    // Yeu hon acquire (it dung)
-memory_order_relaxed    // Khong bao dam thu tu (chi atomicity)
-        |
-Weakest (nhanh nhat)
-```
+**A:**
+- EN: Memory ordering controls **visibility guarantees** between threads. CPUs and compilers reorder operations for performance. From strongest (slowest) to weakest (fastest): `seq_cst` (default, total order) → `acq_rel` → `release`/`acquire` (publish-subscribe pattern) → `relaxed` (atomicity only, nó ordering).
+- VI: Memory ordering kiểm soat **đảm bảo khả năng thay** giữa các thread. CPU và compiler reorder operations để tối ưu. Từ mạnh nhất (chậm nhất) đến yếu nhất (nhanh nhất): `seq_cst` (mặc định, total order) → `acq_rel` → `release`/`acquire` (publish-subscribe pattern) → `relaxed` (chi atomicity, không ordering).
 
 ```cpp
-// Pattern acquire-release pho bien:
+// Acquire-Release pattern (most common)
 std::atomic<bool> ready{false};
 std::string data;
 
-// Thread 1 (producer):
-data = "hello";                               // A
-ready.store(true, std::memory_order_release); // B: "A xay ra truoc B"
+// Producer:
+data = "hello";                                // A
+ready.store(true, std::memory_order_release);  // B: guarantees A happens-before B
 
-// Thread 2 (consumer):
-while (!ready.load(std::memory_order_acquire)) {}  // C: cho den khi thay B
-printf("%s\n", data.c_str());                      // D: thay duoc A
+// Consumer:
+while (!ready.load(std::memory_order_acquire)) {}  // C: sees B
+printf("%s\n", data.c_str());                       // D: guaranteed to see A
 
-// memory_order_relaxed: chi dung cho counter, khong can ordering
+// Relaxed: only for independent counters
 stats.fetch_add(1, std::memory_order_relaxed);
 ```
 
+Follow-up (EN): When is `memory_order_seq_cst` necessary over acquire-release?
+
 ---
 
-### Q5. `condition_variable` dung de lam gi?
+### Q5. `condition_variable` dùng để làm gì?
 
-**A:** `condition_variable` cho phep thread **cho** (block) den khi mot dieu kien duoc thoa man boi thread khac.
+**A:**
+- EN: `condition_variable` lets a thread **block** until notified by another thread that a condition is true. Always use with `unique_lock` and a **predicate** (to handle spurious wakeups). `wait()` atomically releases the mutex and blocks; on notification it re-acquires the mutex and checks the predicate.
+- VI: `condition_variable` cho thread **block** cho đến khi thread khác thông báo điều kiện dùng. Luôn dùng với `unique_lock` và **predicate** (để xử lý spurious wakeup). `wait()` atomically release mutex và block; khi được notify no rẻ-acquire mutex và kiểm tra predicate.
 
 ```cpp
-#include <condition_variable>
-
 std::mutex mtx;
 std::condition_variable cv;
-std::queue<int> data_queue;
+std::queue<int> queue;
 bool done = false;
 
-// Consumer thread:
-void consumer() {
-    std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock, []{ return !data_queue.empty() || done; });
-    // wait: unlock mutex, block cho den khi cv.notify_*() duoc goi
-    //       sau khi duoc notify: lock lai mutex, kiem tra predicate
-    //       neu predicate false: tiep tuc cho (tranh spurious wakeup)
-    while (!data_queue.empty()) {
-        int item = data_queue.front();
-        data_queue.pop();
-        printf("Got: %d\n", item);
-    }
-}
+// Consumer:
+std::unique_lock<std::mutex> lock(mtx);
+cv.wait(lock, [&]{ return !queue.empty() || done; });
+// on wakeup: lock held, predicate is true
 
-// Producer thread:
-void producer() {
-    for (int i = 0; i < 10; ++i) {
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            data_queue.push(i);
-        }
-        cv.notify_one();   // wake up 1 consumer
-    }
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        done = true;
-    }
-    cv.notify_all();       // wake up tat ca consumers
+// Producer:
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    queue.push(42);
 }
+cv.notify_one();   // wake one consumer
+cv.notify_all();   // wake all consumers
 ```
+
+Follow-up (EN): What is a spurious wakeup and why do we need a predicate?
 
 ---
 
-## 2) Van De Concurrency
+## 2) Van Để Concurrency
 
-### Q6. Deadlock la gi? Lam sao tranh?
+### Q6. Deadlock là gì? Làm sao tránh?
 
-**A:** **Deadlock**: hai hay nhieu thread cho nhau giai phong lock — khong ai tien duoc.
+**A:**
+- EN: **Deadlock**: two or more threads wait for each other's locks — nó progress possible. Prevention: (1) always lock in the same order, (2) use `std::scoped_lock` for multiple mutexes, (3) avoid nested locking, (4) use try-lock with timeout.
+- VI: **Deadlock**: hai hay nhiều thread cho nhau gìải phóng lock — không ai tien được. Phong tránh: (1) luôn lock theo cũng thứ tự, (2) dùng `std::scoped_lock` cho nhiều mutex, (3) tránh nested locking, (4) dùng try-lock với timeout.
 
 ```cpp
-// Deadlock kinh dien:
-// Thread 1:     Thread 2:
-// lock(A)       lock(B)
-// lock(B)  <->  lock(A)   <-- each cho cai kia
-// unlock(B)     unlock(A)
-// unlock(A)     unlock(B)
+// Deadlock:
+// Thread 1: lock(A) -> lock(B)
+// Thread 2: lock(B) -> lock(A)  — each waits for the other
 
-std::mutex A, B;
-void thread1() { A.lock(); B.lock(); /* ... */ B.unlock(); A.unlock(); }
-void thread2() { B.lock(); A.lock(); /* ... */ A.unlock(); B.unlock(); }
-// Deadlock co the xay ra
-```
+// Fix 1: consistent ordering
+// Both: lock(A) -> lock(B)
 
-**Cach tranh:**
-
-1. **Lock ordering**: luon lock theo cung thu tu
-```cpp
-void thread1() { A.lock(); B.lock(); /* ... */ }
-void thread2() { A.lock(); B.lock(); /* ... */ }  // cung thu tu A truoc B
-```
-
-2. **std::lock / scoped_lock**: lock nhieu mutex an toan
-```cpp
+// Fix 2: scoped_lock (C++17)
 std::scoped_lock lk(A, B);  // deadlock-free algorithm
-```
 
-3. **Lock hierarchy**: gan priority cho mutex, chi lock theo chieu giam
-4. **Tranh nested locking** khi co the
-5. **Try-lock voi timeout**:
-```cpp
+// Fix 3: try-lock
 if (A.try_lock()) {
     if (B.try_lock()) { /* ... */ B.unlock(); }
     A.unlock();
 }
 ```
 
+Follow-up (EN): What are the four Coffman conditions for deadlock?
+
 ---
 
-### Q7. Data race la gi? Phan biet voi race condition?
+### Q7. Data race là gì? Phân biệt với race condition?
 
 **A:**
+- EN: **Data race** (UB in C++): two threads access the same variable concurrently, at least one writes, nó synchronization. **Race condition**: logic bug dependent on thread execution order — can occur even with proper synchronization. Data race → always a bug; race condition → design problem.
+- VI: **Data race** (UB trong C++): 2 thread truy cập cũng biến đồng thời, ít nhất 1 ghi, không có sync. **Race condition**: lỗi logic phụ thuộc thứ tự thực thì — có thể xảy ra đủ đã sync dùng. Data race → luôn là bug; race condition → van để thiết kế.
 
-**Data race**: hai threads doc/ghi cung 1 bien cung luc, it nhat 1 thread ghi, khong co synchronization -> **UB trong C++**.
 ```cpp
+// Data race (UB):
 int x = 0;
-// Thread 1: x++;      \
-// Thread 2: x++;       -> Data race: UB!
-// Ket qua co the la 1 hoac 2
+// Thread 1: x++;
+// Thread 2: x++;
+// Result: undefined — could be 1 or 2
+
+// Race condition (logic bug, nó UB):
+std::atomic<int> count{0};
+if (count < 10) {       // Thread 1: sees 9
+                         // Thread 2: also sees 9
+    count++;             // Both increment: count = 11 — exceeds limit!
+}
+// Fix: use CAS or mutex around check-and-increment
 ```
 
-**Race condition**: loi logic phu thuoc vao thu tu thuc hien cua threads (co the xay ra du khong co data race).
-```cpp
-// Thread-safe counter nhung van co race condition:
-std::atomic<int> count{0};
-if (count < 10) {        // Thread 1 kiem tra: count = 9
-    // Thread 2 cung kiem tra: count = 9
-    count++;             // Thread 1: count = 10
-    // Thread 2: count = 11 -> vuot gioi han!
-}
-// Giai phap: dung compare_exchange hoac mutex boc ca 2 buoc
-```
+Follow-up (EN): How does ThreadSanitizer (TSan) detect data races?
 
 ---
 
-### Q8. `std::future` va `std::promise` la gi?
+### Q8. `std::future` và `std::promise` là gì?
 
-**A:** Mechanism truyen ket qua giua threads — producer set gia tri qua `promise`, consumer lay qua `future`.
+**A:**
+- EN: A **promise-future** pair is a one-shot channel for passing a result between threads. The producer sets the value via `promise::set_value()`; the consumer retrieves it via `future::get()` (blocks until ready). `std::async` is the simplest way to get a future.
+- VI: Cấp **promise-future** là kênh một chiều để truyen kết quả giữa thread. Producer set giá trị qua `promise::set_value()`; consumer lấy qua `future::get()` (block cho đến khi có). `std::async` là cách đơn gìản nhất để lấy future.
 
 ```cpp
-#include <future>
+// std::async: simplest
+auto fut = std::async(std::launch::async, []{ return 42; });
+int result = fut.get();  // blocks until ready
 
-// std::async: cach don gian nhat
-auto fut = std::async(std::launch::async, []() {
-    return 42;
-});
-// ... lam viec khac trong khi thread chay ...
-int result = fut.get();  // doi ket qua (block neu chua co)
-
-// promise/future: kiem soat thu cong
+// promise/future: manual control
 std::promise<int> prom;
 std::future<int> fut = prom.get_future();
+std::thread t([&prom]{ prom.set_value(42); });
+int result = fut.get();
+t.join();
 
-std::thread t([&prom]() {
-    // ... tinh toan ...
-    prom.set_value(42);   // gui ket qua
-    // hoac: prom.set_exception(make_exception_ptr(...));
-});
-t.detach();
-
-int result = fut.get();   // nhan ket qua (block)
-```
-
-**`std::packaged_task`:**
-```cpp
-std::packaged_task<int(int, int)> task([](int a, int b){ return a + b; });
-std::future<int> fut = task.get_future();
-
+// packaged_task: wraps callable into future
+std::packaged_task<int(int,int)> task([](int a, int b){ return a+b; });
+auto fut = task.get_future();
 std::thread t(std::move(task), 10, 20);
-t.detach();
-
 int result = fut.get();  // 30
+t.join();
 ```
+
+Follow-up (EN): What happens if you call `future::get()` twice?
 
 ---
 
 ## 3) Lock-Free Programming
 
-### Q9. Lock-free la gi? Khi nao can?
+### Q9. Lock-free là gì? Khi nào cần?
 
-**A:** Lock-free: dam bao tien trien cua he thong du mot thread bi delay vo han (khong co deadlock). Dung khi:
-- Lat real-time requirement
-- Mutex overhead qua cao (high-frequency operations)
-- Tranh priority inversion
+**A:**
+- EN: **Lock-free**: guarantees system-wide progress even if any thread is suspended — nó deadlock possible. Built on atomic CAS operations. Use when: hard real-time requirements, mutex overhead too high, or avoiding priority inversion. Beware of the **ABA problem** (CAS succeeds falsely when value changes A→B→A).
+- VI: **Lock-free**: đảm bảo tien trien toan hệ thống đủ bất kỳ thread nào bi dùng — không deadlock. Xảy trên atomic CAS. Dùng khi: yêu cầu hard real-time, mutex overhead qua cao, hoặc tránh priority inversion. Chu y **ABA problem** (CAS thành cổng sai khi giá trị đổi A→B→A).
 
 ```cpp
-// Lock-free stack don gian (Treiber stack):
+// Lock-free stack (Treiber stack)
 template<typename T>
 class LockFreeStack {
     struct Node { T data; Node* next; };
     std::atomic<Node*> head_{nullptr};
-
 public:
     void push(T val) {
         Node* node = new Node{val, nullptr};
         node->next = head_.load();
         while (!head_.compare_exchange_weak(node->next, node)) {}
-        // CAS: neu head_ van bang node->next, doi sang node
-        // Neu khong (ai do push truoc): thu lai voi head_ moi
     }
-
     std::optional<T> pop() {
-        Node* old_head = head_.load();
-        while (old_head && !head_.compare_exchange_weak(old_head, old_head->next)) {}
-        if (!old_head) return std::nullopt;
-        T val = old_head->data;
-        delete old_head;  // ABA problem! Can hazard pointer hoac epoch-based reclamation
+        Node* old = head_.load();
+        while (old && !head_.compare_exchange_weak(old, old->next)) {}
+        if (!old) return std::nullopt;
+        T val = old->data;
+        delete old;  // ABA problem! Need hazard pointers
         return val;
     }
 };
 ```
 
-**ABA problem**: CAS co the thanh cong sai khi gia tri doi tu A->B->A (thay A nhung la A khac). Giai phap: tagged pointer, hazard pointer.
+Follow-up (EN): What are hazard pointers and epoch-based reclamation?
 
 ---
 
-### Q10. Thread pool implement the nao?
+### Q10. Thread pool implement thế nào?
 
 **A:**
+- EN: A thread pool maintains a fixed number of worker threads and a task queue. Workers block on a condition variable until tasks are available. `submit()` enqueues a task and notifies one worker. Destructor sets a stop flag, notifies all, and joins all threads.
+- VI: Thread pool duy tri số luồng worker thread cố định và 1 task queue. Worker block trên condition variable cho đến khi có task. `submit()` thêm task vào queue và notify 1 worker. Destructor set stop flag, notify tất cả, và join tất cả thread.
 
 ```cpp
 class ThreadPool {
     std::vector<std::thread> workers_;
     std::queue<std::function<void()>> tasks_;
-    std::mutex queue_mtx_;
+    std::mutex mtx_;
     std::condition_variable cv_;
     bool stop_ = false;
-
 public:
     ThreadPool(size_t n) {
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < n; ++i)
             workers_.emplace_back([this] {
                 while (true) {
                     std::function<void()> task;
                     {
-                        std::unique_lock<std::mutex> lock(queue_mtx_);
+                        std::unique_lock lock(mtx_);
                         cv_.wait(lock, [this]{ return stop_ || !tasks_.empty(); });
                         if (stop_ && tasks_.empty()) return;
                         task = std::move(tasks_.front());
@@ -391,47 +283,39 @@ public:
                     task();
                 }
             });
-        }
     }
-
     template<typename F>
     auto submit(F&& f) -> std::future<decltype(f())> {
-        auto task = std::make_shared<std::packaged_task<decltype(f())()>>(std::forward<F>(f));
-        std::future<decltype(f())> fut = task->get_future();
-        {
-            std::lock_guard<std::mutex> lock(queue_mtx_);
-            tasks_.emplace([task]{ (*task)(); });
-        }
+        auto task = std::make_shared<std::packaged_task<decltype(f())()>>(
+            std::forward<F>(f));
+        auto fut = task->get_future();
+        { std::lock_guard lock(mtx_); tasks_.emplace([task]{ (*task)(); }); }
         cv_.notify_one();
         return fut;
     }
-
     ~ThreadPool() {
-        { std::lock_guard<std::mutex> lock(queue_mtx_); stop_ = true; }
+        { std::lock_guard lock(mtx_); stop_ = true; }
         cv_.notify_all();
         for (auto& w : workers_) w.join();
     }
 };
-
-// Su dung:
-ThreadPool pool(4);
-auto fut = pool.submit([]{ return 42; });
-printf("%d\n", fut.get());
 ```
+
+Follow-up (EN): How would you implement work-stealing for better load balancing?
 
 ---
 
 ## Flash card
 
-| Cau hoi | Tra loi nhanh |
+| Question / Câu hỏi | Quick answer / Trả lỗi nhanh |
 |---|---|
-| `join` vs `detach`? | join: cho thread xong; detach: tach doc lap |
-| `lock_guard` vs `unique_lock`? | unique_lock flexible hon (co the unlock som) |
-| Data race la gi? | 2 thread doc/ghi cung luc, 1 ghi, khong sync -> UB |
-| Deadlock tranh bang? | Lock ordering, scoped_lock, tranh nested lock |
-| `memory_order_relaxed` dung khi? | Chi can atomicity, khong can ordering (counter) |
-| `condition_variable` luon dung voi gi? | `unique_lock` va predicate lambda |
-| `std::async` tra ve gi? | `std::future<T>` |
-| ABA problem la gi? | CAS sai khi A->B->A, can tagged pointer |
-| `compare_exchange_weak` vs strong? | weak: co spurious fail, dung trong loop |
-| `scoped_lock` C++17? | Lock nhieu mutex, deadlock-free, RAII |
+| `join` vs `detach`? | join: wait for thread; detach: run independently |
+| `lock_guard` vs `unique_lock`? | unique_lock: flexible, cần unlock early, works with cv |
+| Data race? | Two threads access same var, one writes, nó sync → UB |
+| Prevent deadlock? | Lock ordering, scoped_lock, avoid nested locks |
+| `memory_order_relaxed` when? | Only need atomicity, nó ordering (counters) |
+| `condition_variable` requires? | `unique_lock` + predicate lambda |
+| `std::async` returns? | `std::future<T>` |
+| ABA problem? | CAS succeeds falsely when A→B→A; use tagged pointer |
+| `compare_exchange_weak` vs strong? | weak: may spuriously fail, use in loop |
+| `scoped_lock` (C++17)? | Lock multiple mutexes, deadlock-free, RAII |

@@ -1,19 +1,19 @@
-# 06 - System Design voi C++ (Senior Interview)
+# 06 - System Design với C++ (Senior Interview)
 
 ## 1) Design mindset
 
-### Q1. Trong system design C++ can nhan manh gi?
+### Q1. Trong system design C++ cần nhận mạnh gì?
 A: Latency, throughput, memory footprint, failure mode, observability, deployability, ABI/runtime constraints.
 
-### Q2. Cach phan ra module cho codebase lon?
-A: Theo bounded context, API ro ownership, dependency 1 chieu, tan dung interface stable.
+### Q2. Cách phần ra module cho codebase lớn?
+A: Theo bounded context, API rõ ownership, dependency 1 chiều, tan dùng interface stable.
 
-### Q3. Hexagonal/Clean architecture co phu hop C++?
-A: Co, dac biet cho testing va tach domain khoi IO/framework.
+### Q3. Hexagonal/Clean architecture có phù hợp C++?
+A: Có, đặc biệt cho testing và tách domain khoi IO/framework.
 
-## 2) Cach tra loi bai design
+## 2) Cách trả lỗi bài design
 
-### Q4. Khung tra loi 7 buoc?
+### Q4. Khung trả lỗi 7 bước?
 A:
 1. Clarify requirement
 2. Functional/non-functional
@@ -27,32 +27,32 @@ A:
 A: 
 - 50k req/s
 - payload 1KB => ~50MB/s
-- neu luu 7 ngay log: 50MB/s * 86400 * 7 ~= 30TB (chua compress)
+- nếu lưu 7 ngay log: 50MB/s * 86400 * 7 ~= 30TB (chưa compress)
 
 ## 3) C++ specific design
 
-### Q6. Plugin architecture trong C++ can de y gi?
-A: ABI boundary, symbol visibility, versioning, C API bridge de on dinh giua compiler.
+### Q6. Plugin architecture trong C++ cần để y gì?
+A: ABI boundary, symbol visibility, versioning, C API bridge để ổn định giữa compiler.
 
-### Q7. Vi sao co the dung C wrapper cho C++ lib?
-A: C ABI on dinh hon, de binding sang ngon ngu khac va tranh ABI fragility C++.
+### Q7. Vì sao có thể dùng C wrapper cho C++ lib?
+A: C ABI ổn định hon, để binding sáng ngon ngu khác và tránh ABI fragility C++.
 
 ### Q8. Serialization format chon sao?
-A: Proto/FlatBuffers/Cap'n Proto tuy can bang schema evolution, speed, zero-copy.
+A: Proto/FlatBuffers/Cấp'n Proto tuy cần bảng schema evolution, speed, zero-copy.
 
 ### Q9. Batch vs streaming pipeline?
-A: Batch de quan ly don gian, streaming cho low-latency. Nhieu he thong hybrid.
+A: Batch để quản lý đơn gìản, streaming cho low-latency. Nhiều hệ thống hybrid.
 
 ## 4) Reliability
 
 ### Q10. Circuit breaker/retry/backoff trong service C++?
-A: Phai co timeout ro rang, retry idempotent, exponential backoff + jitter.
+A: Phải có timeout rõ rang, retry idempotent, exponential backoff + jitter.
 
-### Q11. Idempotency key dung de lam gi?
-A: Tranh xu ly trung request khi retry/network duplicate.
+### Q11. Idempotency key dùng để làm gì?
+A: Tránh xử lý trung request khi retry/network duplicate.
 
-### Q12. Exactly-once co that khong?
-A: Thuong la "effectively-once" nho idempotency + dedup + transaction boundary.
+### Q12. Exactly-once có that không?
+A: Thường là "effectively-once" nhỏ idempotency + dedup + transaction boundary.
 
 ## 5) Observability
 
@@ -62,15 +62,15 @@ A: Metrics, logs, traces.
 ### Q14. Golden signals?
 A: Latency, traffic, errors, saturation.
 
-### Q15. Senior nen thiet ke dashboard nhu the nao?
-A: Theo user journey/SLO, drill-down tu service -> endpoint -> dependency.
+### Q15. Senior nên thiết kế dashboard như thế nào?
+A: Theo user journey/SLO, drill-down từ service -> endpoint -> dependency.
 
 ## 6) Interview deep dive prompts
 
 ### Q16. Design rate limiter?
-A: Token bucket/leaky bucket, phan tan state (Redis), consistent hashing, fail-open/fail-closed.
+A: Token bucket/leaky bucket, phần tan state (Redis), consistent hashing, fail-open/fail-closed.
 
-### Q17. Design message queue nho?
+### Q17. Design message queue nhỏ?
 A: Partition, ordering guarantee, ack/retry, dead-letter queue, retention.
 
 ### Q18. Design cache layer cho service C++?
@@ -78,8 +78,8 @@ A: TTL, invalidation policy, stampede protection, warmup, fallback khi cache dow
 
 ## 7) Senior signal
 
-### Q19. Lam sao quyet dinh giua optimize latency va dev velocity?
-A: Dua tren SLO/SLI va business impact, profile diem nong truoc, khong optimize vo tong.
+### Q19. Làm sao quyết định giữa optimize latency và dev velocity?
+A: Dua trên SLO/SLI và business impact, profile điểm nong trước, không optimize vo tong.
 
-### Q20. Khi nao no voi yeu cau "too risky"?
-A: Khi chua co rollback, observability, test load, hoac pha ABI/protocol ma khong migration plan.
+### Q20. Khi nào no với yêu cầu "too risky"?
+A: Khi chưa có rollback, observability, test load, hoặc phá ABI/protocol mà không migration plan.

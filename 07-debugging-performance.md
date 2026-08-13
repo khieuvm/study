@@ -3,71 +3,71 @@
 ## 1) Performance process
 
 ### Q1. Nguyen tac vang?
-A: Do truoc, toi uu sau. Khong toi uu theo cam giac.
+A: Do trước, tối ưu sau. không tối ưu theo cam giac.
 
-### Q2. KPI thuong dung?
+### Q2. KPI thường dùng?
 A: p50/p95/p99 latency, throughput, CPU%, RSS, alloc/sec, cache miss rate.
 
-### Q3. Benchmark sai thuong gap?
-A: Khong warmup, benchmark nho qua, bi dead-code elimination, environment khong on dinh.
+### Q3. Benchmark sai thường gap?
+A: Không warmup, benchmark nhỏ qua, bi dead-code elimination, environment không ổn định.
 
 ## 2) Tooling
 
-### Q4. Linux profiler thuong dung?
+### Q4. Linux profiler thường dùng?
 A: `perf`, `heaptrack`, `valgrind`, `flamegraph`.
 
-### Q5. Sanitizer nao cho gi?
+### Q5. Sanitizer nào cho gì?
 A:
 - ASan: memory error
 - UBSan: undefined behavior
 - TSan: data race
 - MSan: uninitialized read
 
-### Q6. Co nen bat sanitizer o production?
-A: Thuong khong (chi phi cao), nhung nen bat trong CI/nightly/staging.
+### Q6. Có nên bắt sanitizer o production?
+A: Thường không (chi phí cao), nhưng nên bắt trong CI/nightly/staging.
 
 ## 3) Memory
 
 ### Q7. Memory leak debug flow?
 A:
 1. Reproduce
-2. Dung ASan/leak sanitizer
+2. Dùng ASan/leak sanitizer
 3. Khoanh life-time object
-4. Xac nhan ownership contract
+4. Xác nhận ownership contract
 
 ### Q8. Fragmentation vs leak?
-A: Leak la mat tham chieu khong giai phong. Fragmentation la heap con free nhung tan man kho dung.
+A: Leak là mat tham chiếu không gìải phóng. Fragmentation là heap còn free nhưng tan man kho dùng.
 
 ## 4) CPU-level awareness
 
-### Q9. Cache locality vi sao quan trong?
-A: Truy cap lien tiep bo nho giam cache miss, tang throughput dang ke.
+### Q9. Cache locality vì sao quan trọng?
+A: Truy cập lien tiếp bộ nhớ giảm cache miss, tăng throughput đang kế.
 
-### Q10. Branch misprediction la gi?
-A: CPU doan sai nhanh dieu kien, phai flush pipeline.
+### Q10. Branch misprediction là gì?
+A: CPU doan sai nhanh điều kiện, phải flush pipeline.
 
-### Q11. SIMD co nen ap dung mac dinh?
-A: Khong. Dung khi hotspot ro va du lieu phu hop vectorization.
+### Q11. SIMD có nên ap dùng mặc định?
+A: Không. Dùng khi hotspot rõ và dữ liệu phù hợp vectorization.
 
 ## 5) Build optimization
 
 ### Q12. `-O2` vs `-O3`?
-A: `-O3` aggressive hon, khong luon nhanh hon toan cuc, co the tang size code.
+A: `-O3` aggressive hon, không luôn nhanh hơn toan cuc, có thể tăng size code.
 
-### Q13. LTO/PGO la gi?
+### Q13. LTO/PGO là gì?
 A: 
-- LTO: toi uu luc link toan chuong trinh
-- PGO: toi uu dua tren profile runtime thuc te
+- LTO: tối ưu luc link toan chương trình
+- PGO: tối ưu dua trên profile runtime thực tế
 
 ## 6) Incident response
 
-### Q14. Service latency tang dot bien, xu ly sao?
+### Q14. Service latency tăng dot biến, xử lý sao?
 A:
-1. Kiem tra recent deploy
+1. Kiểm tra recent deploy
 2. Xem saturation CPU/memory/IO
 3. So sánh p95 theo endpoint
-4. Rollback neu can
+4. Rollback nếu cần
 5. Mo postmortem
 
-### Q15. Postmortem tot gom gi?
-A: Timeline, root cause, impact, phat hien giup som hon, action item co owner + due date.
+### Q15. Postmortem tốt gom gì?
+A: Timeline, root cause, impact, phát hiện giúp sớm hon, action item có owner + due date.

@@ -1,304 +1,197 @@
-# 09 - Performance & Optimization
+# 09 - Performance & Optimization — Bilingual VI/EN
 
 ---
 
-## 1) Cache va Memory Hierarchy
+## 1) Cache và Memory Hierarchy
 
-### Q1. Cache hierarchy hoat dong the nao? Tai sao quan trong?
+### Q1. Cache hierarchy hoạt động thế nào? Tại sao quan trọng?
 
 **A:**
-```
-CPU Registers  ~0 cycles    ~KB
-L1 Cache       ~4 cycles    32-64 KB (per core)
-L2 Cache       ~12 cycles   256 KB - 1 MB (per core)
-L3 Cache       ~40 cycles   4-32 MB (shared)
-RAM            ~100 cycles  GB
-NVMe SSD       ~10,000 cycles
-HDD            ~1,000,000 cycles
-```
-
-**Cache line**: don vi nho nhat cache doc/ghi — thuong **64 bytes**. Khi ban truy cap 1 byte, CPU load 64 bytes vao cache.
+- EN: Modern CPUs have a multi-level cache hierarchy: L1 (~4 cycles, 32-64KB per core), L2 (~12 cycles, 256KB-1MB), L3 (~40 cycles, 4-32MB shared), RAM (~100 cycles). The **cache line** (64 bytes) is the minimum transfer unit. Accessing data sequentially (row-major) is 5-10x faster than striding (column-major) on large arrays due to cache locality.
+- VI: CPU hiện đại có cache nhiều cấp: L1 (~4 chu kỳ, 32-64KB mỗi core), L2 (~12 chu kỳ, 256KB-1MB), L3 (~40 chu kỳ, 4-32MB shared), RAM (~100 chu kỳ). **Cache line** (64 byte) là đơn vị truyen tối thìểu. Truy cập dữ liệu tương tự (row-major) nhanh gap 5-10 lan số với nhảy (column-major) trên mạng lớn nhỏ cache locality.
 
 ```cpp
-// BAD: truuy cap khong lien tuc (column-major tren row-major array)
-// Cache miss nhieu vi jump 1000*4 = 4000 bytes moi phan tu
+// BAD: column-major access — cache miss every element
 for (int j = 0; j < 1000; j++)
     for (int i = 0; i < 1000; i++)
-        sum += matrix[i][j];  // access pattern: col by col
+        sum += matrix[i][j];
 
-// GOOD: truy cap lien tuc (row-major)
-// Cache-friendly: moi cache miss load 64 bytes, dung het
+// GOOD: row-major access — cache-friendly
 for (int i = 0; i < 1000; i++)
     for (int j = 0; j < 1000; j++)
-        sum += matrix[i][j];  // access pattern: row by row
-// ~5-10x nhanh hon tren matrix lon
+        sum += matrix[i][j];
 ```
+
+Follow-up (EN): How would you measure cache miss rate in your code?
 
 ---
 
-### Q2. False sharing la gi? Lam sao tranh?
+### Q2. False sharing là gì? Làm sao tránh?
 
-**A:** **False sharing**: 2 threads ghi vao 2 bien khac nhau nhung cung 1 cache line — moi ghi force invalidate cache line cua thread kia -> chay tham.
+**A:**
+- EN: **False sharing**: two threads write to different variables that happen to share the same cache line — each write invalidates the other core's cache line, causing severe performance degradation. Fix: pad or align data số each thread's data occupies its own cache line (64 bytes). C++17: `std::hardware_destructive_interference_size`.
+- VI: **False sharing**: 2 thread ghi vào 2 biến khác nhau nhưng cũng cache line — mỗi lần ghi invalidate cache line của core kia, làm giảm hiệu suất nghiêm trọng. Fix: padding hoặc align data để data của mỗi thread o cache line riêng (64 byte). C++17: `std::hardware_destructive_interference_size`.
 
 ```cpp
-// BAD: counters[0] va counters[1] co the cung 1 cache line (16 byte < 64 byte)
-struct Counters {
-    int counter1;  // offset 0
-    int counter2;  // offset 4 — cung cache line voi counter1!
-};
+// BAD: counter1 and counter2 share same cache line
+struct Counters { int counter1; int counter2; };
 
-Counters c;
-// Thread 1: c.counter1++; (invalidate cache line cho Thread 2)
-// Thread 2: c.counter2++; (invalidate cache line cho Thread 1)
-// Moi increment cua thread nay lam chap nhau cache cua thread kia
-
-// FIX: padding de moi counter o cache line rieng
-struct alignas(64) PaddedCounter {
-    int value;
-    char padding[60];  // fill du 64 bytes
-};
-
-PaddedCounter counters[2];  // moi counter o cache line rieng
-// Thread 1: counters[0].value++; (khong anh huong Thread 2)
-// Thread 2: counters[1].value++; (khong anh huong Thread 1)
-
-// C++17: hardware_destructive_interference_size
-struct alignas(std::hardware_destructive_interference_size) SafeCounter {
-    std::atomic<int> value{0};
-};
+// GOOD: each on its own cache line
+struct alignas(64) PaddedCounter { std::atomic<int> value{0}; };
+PaddedCounter counters[2];
 ```
+
+Follow-up (EN): How would you detect false sharing using `perf`?
 
 ---
 
-### Q3. Data-Oriented Design (DOD) la gi?
+### Q3. Data-Oriented Design (DOD) là gì?
 
-**A:** Thay vi to chuc data theo Objects (Array of Structures), to chuc theo cac mang rieng le (Structure of Arrays) de cache-friendly va SIMD-friendly.
+**A:**
+- EN: DOD organizes data for **cache efficiency** rather than object hierarchy. Instead of Array-of-Structures (AoS, OOP-traditional), use Structure-of-Arrays (SoA) — each field in a contiguous array. SoA is cache-friendly and SIMD-friendly, enabling auto-vectorization.
+- VI: DOD tổ chức dữ liệu theo **hiệu quả cache** thay vì phân cấp object. Thay vì Array-of-Structures (AoS, OOP truyền thống), dùng Structure-of-Arrays (SoA) — mọi field trong 1 mạng liên tục. SoA cache-friendly và SIMD-friendly, cho phép auto-vectorization.
 
 ```cpp
-// AoS (Array of Structures) — OOP traditional:
-struct Particle {
-    float x, y, z;
-    float vx, vy, vz;
-    float mass;
-    int   id;
-};
-std::vector<Particle> particles(N);  // xen ke x,y,z,vx,vy,vz,mass,id,...
+// AoS (traditional OOP) — cache waste when accessing only x,y,z
+struct Particle { float x, y, z, vx, vy, vz, mass; int id; };
+std::vector<Particle> particles(N);
 
-// Cap nhat vi tri: chi can x,y,z,vx,vy,vz nhung load ca struct (cache waste)
-for (auto& p : particles) {
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.z += p.vz * dt;
-}
-
-// SoA (Structure of Arrays) — DOD:
+// SoA (DOD) — contiguous access, SIMD-friendly
 struct Particles {
-    std::vector<float> x, y, z;
-    std::vector<float> vx, vy, vz;
+    std::vector<float> x, y, z, vx, vy, vz;
     std::vector<float> mass;
-    std::vector<int>   id;
+    std::vector<int> id;
 };
-Particles ps; ps.x.resize(N); /* ... */
 
-// Cap nhat vi tri: chi load x[], vx[], etc. — cache-friendly, SIMD-friendly
+// Position update: touches only x,vx,y,vy,z,vz — all contiguous
 for (int i = 0; i < N; i++) {
-    ps.x[i] += ps.vx[i] * dt;  // lien tuc trong memory
-    ps.y[i] += ps.vy[i] * dt;
-    ps.z[i] += ps.vz[i] * dt;
+    ps.x[i] += ps.vx[i] * dt;  // compiler can auto-vectorize
 }
-// Compiler co the auto-vectorize (SIMD) vong lap nay
 ```
+
+Follow-up (EN): When is AoS actually better than SoA?
 
 ---
 
 ## 2) Compiler Optimizations
 
-### Q4. Cac compiler optimization quan trong nhat?
+### Q4. Các compiler optimization quan trọng nhất?
 
 **A:**
+- EN: Key optimizations: **inlining** (replace call with body), **loop unrolling** (reduce loop overhead), **NRVO** (construct return value in-place), **alias analysis** (`__restrict__` tells compiler pointers don't alias, enabling vectorization), **dead code elimination**, **constant folding**.
+- VI: Các tối ưu chính: **inlining** (thay call bảng body), **loop unrolling** (giảm overhead vòng lặp), **NRVO** (construct return value tại chỗ), **alias analysis** (`__restrict__` báo compiler pointer không alias, cho phép vectorization), **dead code elimination**, **constant folding**.
 
-**Inlining** — thay the function call bang body:
 ```cpp
-// inline goi y (compiler tu quyet)
-inline int add(int a, int b) { return a + b; }
-
-// Force inline (compiler-specific):
-__attribute__((always_inline)) int add(int a, int b) { return a + b; }
-__forceinline int add(int a, int b) { return a + b; }  // MSVC
-```
-
-**Loop unrolling** — giam loop overhead:
-```cpp
-// Compiler co the biet:
-for (int i = 0; i < 4; i++) sum += arr[i];
-// Thanh:
-sum += arr[0]; sum += arr[1]; sum += arr[2]; sum += arr[3];
-```
-
-**NRVO (Named Return Value Optimization)**:
-```cpp
+// NRVO: no copy, nó move — constructed directly at return location
 std::vector<int> create() {
     std::vector<int> v = {1, 2, 3};
-    return v;  // NRVO: construct truc tiep tai return location, khong move
+    return v;
+}
+
+// __restrict__: enable vectorization by promising no aliasing
+void add(float* __restrict__ a, const float* __restrict__ b,
+         const float* __restrict__ c, int n) {
+    for (int i = 0; i < n; i++) a[i] = b[i] + c[i];
 }
 ```
 
-**Alias analysis** — compiler gia dinh 2 pointer khac kieu khong alias:
-```cpp
-void add(float* a, float* b, float* c, int n) {
-    for (int i = 0; i < n; i++)
-        a[i] = b[i] + c[i];
-    // Neu a alias voi b hay c, compiler khong the vectorize
-}
-// FIX: dung restrict (C99) hoac __restrict__ (C++)
-void add(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n);
-```
+Follow-up (EN): How can you verify the compiler actually vectorized a loop? (Use `-fopt-info-vec` or Compiler Explorer.)
 
 ---
 
-### Q5. SIMD (Single Instruction Multiple Data) la gi?
+### Q5. SIMD (Single Instruction Multiple Data) là gì?
 
-**A:** Thuc hien cung 1 phep tinh tren **nhieu data** dong thoi bang 1 instruction.
-
-```
-SSE2:  128-bit = 4 x float32 hoac 2 x float64
-AVX2:  256-bit = 8 x float32
-AVX-512: 512-bit = 16 x float32
-```
+**A:**
+- EN: SIMD performs the **same operation on multiple data elements** simultaneously: SSE (128-bit = 4 floats), AVX2 (256-bit = 8 floats), AVX-512 (512-bit = 16 floats). Prefer letting the compiler auto-vectorize (`-O2 -march=native`); use intrinsics only when manual control is needed.
+- VI: SIMD thực hiện **cũng phep tinh trên nhiều phần tử** đồng thời: SSE (128-bit = 4 float), AVX2 (256-bit = 8 float), AVX-512 (512-bit = 16 float). Ưu tiên để compiler auto-vectorize (`-O2 -march=native`); chỉ dùng intrinsics khi cần kiểm soat thủ công.
 
 ```cpp
-// Cach 1: de compiler auto-vectorize (uu tien)
-// Chuyen phai: contiguous memory, no aliasing, no branches, simple loop
-for (int i = 0; i < n; i++)
-    c[i] = a[i] + b[i];
-// Compile voi -O2 -march=native: compiler tu dung SIMD
+// Prefer: auto-vectorization (compiler does it)
+for (int i = 0; i < n; i++) c[i] = a[i] + b[i];
+// Compile with -O2 -march=native
 
-// Cach 2: intrinsics (khi can control thu cong):
+// Manual intrinsics (when needed):
 #include <immintrin.h>
-void add_floats(float* c, const float* a, const float* b, int n) {
-    int i = 0;
-    for (; i <= n - 8; i += 8) {
-        __m256 va = _mm256_loadu_ps(a + i);  // load 8 float
-        __m256 vb = _mm256_loadu_ps(b + i);
-        __m256 vc = _mm256_add_ps(va, vb);   // add 8 float cung luc
-        _mm256_storeu_ps(c + i, vc);         // store 8 float
-    }
-    for (; i < n; i++) c[i] = a[i] + b[i];  // phan con lai
+for (int i = 0; i <= n - 8; i += 8) {
+    __m256 va = _mm256_loadu_ps(a + i);
+    __m256 vb = _mm256_loadu_ps(b + i);
+    _mm256_storeu_ps(c + i, _mm256_add_ps(va, vb));
 }
 ```
+
+Follow-up (EN): What data layout requirements does SIMD have (alignment, contiguity)?
 
 ---
 
-### Q6. Branch prediction va lam sao giup CPU?
+### Q6. Branch prediction và làm sao giúp CPU?
 
-**A:** CPU **du doan** nhanh se di theo duong nao trong if/else. Neu du doan sai, phai flush pipeline (~15-20 cycles).
+**A:**
+- EN: CPUs **predict** which branch will be taken to keep the pipeline full. Misprediction costs ~15-20 cycles (pipeline flush). Sorting data before conditional processing makes branches predictable (~6x speedup on random data). **Branchless** code avoids the problem entirely. C++20: `[[likely]]`/`[[unlikely]]` hints.
+- VI: CPU **dự đoán** nhanh nào sẽ được chon để giữ pipeline đầy. Dự đoán sai ton ~15-20 chu kỳ (flush pipeline). Sắp xếp dữ liệu trước khi xử lý có điều kiện làm nhanh dự đoán được (~6x nhanh hơn trên data ngẫu nhiên). Code **branchless** tránh hoàn toàn van để. C++20: `[[likely]]`/`[[unlikely]]` hints.
 
 ```cpp
-// BAD: neu data random, branch prediction 50% sai
-for (int i = 0; i < N; i++) {
-    if (arr[i] > 128) sum += arr[i];  // unpredictable
-}
-
-// GOOD: sort truoc -> branch predictable (lien tuc false, roi lien tuc true)
+// Sorting makes branches predictable: ~6x faster on random data
 std::sort(arr, arr + N);
-for (int i = 0; i < N; i++) {
+for (int i = 0; i < N; i++)
     if (arr[i] > 128) sum += arr[i];
-}
-// ~6x nhanh hon tren data ngau nhien!
 
-// Branchless (tranh branch hoan toan):
-for (int i = 0; i < N; i++) {
-    sum += arr[i] * (arr[i] > 128);  // no branch, chi multiply
-}
-
-// C++20: [[likely]] / [[unlikely]] hint cho compiler
-if (error) [[unlikely]] {
-    handle_error();
-}
+// Branchless alternative:
+for (int i = 0; i < N; i++)
+    sum += arr[i] * (arr[i] > 128);
 ```
+
+Follow-up (EN): How would you use `perf stat` to measure branch misprediction rate?
 
 ---
 
 ## 3) Profiling
 
-### Q7. Cac cong cu profiling pho bien?
+### Q7. Các công cụ profiling phổ biến?
 
 **A:**
+- EN: **perf** (Linux): CPU profiling, cache misses, branch mispredictions, IPC. **Valgrind/callgrind**: call graph analysis, function-level time. **Google Benchmark**: micro-benchmarking with `DoNotOptimize`. **gprof**: sampling profiler. Profile first, optimize second — never guess the bottleneck.
+- VI: **perf** (Linux): CPU profiling, cache miss, branch misprediction, IPC. **Valgrind/callgrind**: phân tích call graph, thời gian muc function. **Google Benchmark**: micro-benchmarking với `DoNotOptimize`. **gprof**: sampling profiler. Profile trước, optimize sau — không báo gio doan bottleneck.
 
-**`perf` (Linux) — CPU profiling:**
 ```bash
-perf stat ./program          # thong ke: cache miss, branch miss, IPC
-perf record ./program        # record profile
-perf report                  # xem hot spots
+perf stat ./program          # summary: cache misses, branch misses, IPC
+perf record ./program        # record samples
+perf report                  # view hot functions
 
-# Output mau:
-# 1,234,567 cache-misses (5.23% of all cache refs)  <-- danh dau
-# 98,765 branch-misses   (0.12% of all branches)
-```
-
-**`valgrind --tool=callgrind` — call graph:**
-```bash
 valgrind --tool=callgrind ./program
-callgrind_annotate callgrind.out.*  # xem function-level time
-kcachegrind callgrind.out.*         # GUI visualizer
+kcachegrind callgrind.out.*  # GUI visualizer
 ```
 
-**`gprof` — sampling profiler:**
-```bash
-g++ -pg -o prog prog.cpp
-./prog
-gprof prog gmon.out > report.txt
-```
-
-**Micro-benchmarking voi Google Benchmark:**
 ```cpp
-#include <benchmark/benchmark.h>
-
-static void BM_my_function(benchmark::State& state) {
+// Google Benchmark
+static void BM_func(benchmark::State& state) {
     for (auto _ : state) {
-        // Code can benchmark
         benchmark::DoNotOptimize(my_function(data));
     }
 }
-BENCHMARK(BM_my_function);
-BENCHMARK_MAIN();
-
-// Chay:
-// ./bench --benchmark_filter=BM_my_function
-// BM_my_function  1234 ns/op   810 MB/s
+BENCHMARK(BM_func);
 ```
+
+Follow-up (EN): What is Amdahl's Law and how does it limit optimization gains?
 
 ---
 
-### Q8. Compiler flags quan trong cho performance?
+### Q8. Compiler flags quan trọng cho performance?
 
 **A:**
+- EN: Key flags: `-O2` (standard production), `-O3` (aggressive), `-march=native` (use all CPU instructions), `-flto` (link-time optimization, whole-program), PGO (Profile-Guided Optimization: build with `-fprofile-generate`, run, rebuild with `-fprofile-use`).
+- VI: Flag chính: `-O2` (production chuan), `-O3` (aggressive), `-march=native` (dùng tất cả instruction của CPU), `-flto` (tối ưu luc link, whole-program), PGO (Profile-Guided Optimization: build với `-fprofile-generate`, chạy, build lai với `-fprofile-use`).
+
 ```bash
-# Optimization levels
--O0    # Khong optimize (debug)
--O1    # Basic optimizations
--O2    # Standard (production)
--O3    # Aggressive (coi chung correctness)
--Os    # Optimize for size
--Oz    # Aggressive size
+# Standard production
+g++ -O2 -march=native -flto -o prog src.cpp
 
-# Architecture-specific
--march=native        # Dung tat ca instructions cua CPU hien tai
--march=x86-64-v3     # Portable nhung voi AVX2
--mtune=native        # Tune nhung khong require
-
-# Link-time optimization
--flto                # Link-Time Optimization (whole-program optimize)
-
-# Profile-guided optimization (PGO):
-# Buoc 1: build voi instrumentation
-g++ -O2 -fprofile-generate -o prog src.cpp
-# Buoc 2: chay voi representative input
-./prog < typical_input.txt
-# Buoc 3: build lai voi profile data
-g++ -O2 -fprofile-use -o prog src.cpp
-# Result: compiler biet hot path, optimize tuong ung
+# PGO: three-step process
+g++ -O2 -fprofile-generate -o prog src.cpp   # step 1: instrument
+./prog < typical_input.txt                     # step 2: profile
+g++ -O2 -fprofile-use -o prog src.cpp         # step 3: optimize with data
 ```
+
+Follow-up (EN): What is the risk of using `-O3` vs `-O2`?
 
 ---
 
@@ -307,77 +200,62 @@ g++ -O2 -fprofile-use -o prog src.cpp
 ### Q9. String optimization trong C++?
 
 **A:**
+- EN: Key string optimizations: **SSO** (Small String Optimization — strings <=~15 chars stored on stack, nó heap), `string_view` (no-copy reference), `reserve()` (pre-allocate to avoid reallocation), avoid temporary strings in concatenation (use `+=` or `std::format`).
+- VI: Các tối ưu string chính: **SSO** (Small String Optimization — string <=~15 ky từ lưu trên stack, không heap), `string_view` (tham chiếu không copy), `reserve()` (cấp phát trước tránh reallocation), tránh temporary string khi nơi chuoi (dùng `+=` hoặc `std::format`).
 
 ```cpp
-// 1. SSO (Small String Optimization): string ngan (<= ~15 char) luu tren stack
-std::string s = "hello";  // luu tren stack, khong heap alloc
+std::string s = "hello";  // SSO: on stack, nó heap allocation
 
-// 2. Tranh copy voi string_view (C++17)
-void old_func(const std::string& s);  // neu truyen "literal" -> tao temp string
-void new_func(std::string_view sv);   // khong copy
-
-// 3. Reserve truoc khi build string
+// Avoid temporaries in concatenation
 std::string result;
-result.reserve(expected_size);       // 1 allocation, tranh realloc
-for (auto& part : parts) result += part;
+result.reserve(expected_size);
+result += "Hello";
+result += ", ";
+result += "World";
 
-// 4. std::string::append vs +=
-s.append(other.begin(), other.end()); // tuong duong += nhung explicit
-
-// 5. Tranh temporary string trong concatenation
-// BAD: moi + tao temporary
-std::string s = "Hello" + std::string(", ") + "World";
-
-// GOOD: dung += hoac format
-std::string s;
-s.reserve(20);
-s += "Hello";
-s += ", ";
-s += "World";
+// string_view: no copy
+void process(std::string_view sv);  // accepts string, char*, string_view
 ```
+
+Follow-up (EN): How many bytes is the SSO threshold in common implementations (GCC, Clang, MSVC)?
 
 ---
 
-### Q10. Move semantics giup performance nhu the nao?
+### Q10. Move semantics giúp performance như thế nào?
 
 **A:**
+- EN: Move semantics enable **O(1) resource transfer** instead of O(n) copy — critical for containers of expensive objects. NRVO eliminates even the move. `emplace_back` constructs in-place (best). After move, source is valid-but-unspecified.
+- VI: Move semantics cho phép **chuyển tài nguyên O(1)** thay vì copy O(n) — quan trọng cho container chưa object đặt. NRVO loại bỏ ca move. `emplace_back` construct tại chỗ (tốt nhất). Sau move, source là valid-but-unspecified.
 
 ```cpp
-// Vi du: return vector lon
+// Return: NRVO (best) or move (O(1))
 std::vector<int> create_data(int n) {
     std::vector<int> result(n);
-    std::iota(result.begin(), result.end(), 0);
-    return result;  // NRVO: khong copy, khong move (construct tai cho)
+    return result;  // NRVO: no copy, nó move
 }
 
-// Neu NRVO khong ap dung duoc -> move (O(1)) thay vi copy (O(n))
-std::vector<int> a = {1,2,3,...millions...};
-std::vector<int> b = std::move(a);  // O(1): chi swap 3 pointers
-
-// Insert vao container:
-std::vector<std::string> v;
+// Insert: move vs copy
 std::string s = "long string...";
-v.push_back(s);             // copy: heap alloc + copy
-v.push_back(std::move(s));  // move: O(1)
-v.emplace_back("literal");  // construct in-place: tot nhat
-
-// Container operations:
-std::sort(v.begin(), v.end()); // dung move khi swap -> nhanh hon copy
+v.push_back(s);             // COPY: O(n)
+v.push_back(std::move(s));  // MOVE: O(1)
+v.emplace_back("literal");  // IN-PLACE: best
 ```
+
+Follow-up (EN): When does NRVO fail and a move happens instead?
 
 ---
 
 ## Flash card
 
-| Cau hoi | Tra loi nhanh |
+| Question / Câu hỏi | Quick answer / Trả lỗi nhanh |
 |---|---|
-| Cache line size? | Thuong 64 bytes |
-| False sharing la gi? | 2 threads ghi cung cache line, invisible sync |
-| AoS vs SoA? | SoA cache-friendly, SIMD-friendly |
-| NRVO la gi? | Compiler construct return value truc tiep, khong copy |
-| `-march=native` lam gi? | Enable tat ca CPU instructions hien co |
-| Branch prediction miss chi phi? | ~15-20 cycles pipeline flush |
-| `[[likely]]`/`[[unlikely]]` dung khi? | Hint compiler ve branch probability |
-| PGO la gi? | Profile-Guided Optimization, optimize theo actual usage |
-| `__restrict__` dung de lam gi? | Bao compiler 2 pointer khong alias |
-| SSO la gi? | Small String Optimization: string ngan tren stack |
+| Cache line size? | Typically 64 bytes |
+| False sharing? | Two threads write to same cache line — invisible contention |
+| AoS vs SoA? | SoA: cache-friendly, SIMD-friendly |
+| NRVO? | Compiler constructs return value directly — nó copy/move |
+| `-march=native`? | Enable all CPU instructions available |
+| Branch misprediction cost? | ~15-20 cycles pipeline flush |
+| `[[likely]]`/`[[unlikely]]`? | Hint compiler about branch probability |
+| PGO? | Profile-Guided Optimization — optimize based on actual usage |
+| `__restrict__`? | Promise compiler two pointers don't alias |
+| SSO? | Small String Optimization — short strings on stack |
