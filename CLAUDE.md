@@ -20,6 +20,11 @@ He thong toan bo kien thuc C/C++ tu co ban den nang cao, bao gom dap an chi tiet
 | `08-design-patterns.md` | Design patterns trong C++ |
 | `09-optimization.md` | Cache, SIMD, profiling, compiler flags |
 | `10-systems.md` | OS, syscall, networking, IPC, ELF/ABI |
+| `11-telecom-fundamentals.md` | 3GPP, LTE/5G protocol stack, DSP, RTOS, SCTP |
+| `12-system-design.md` | System design: reliability, observability, capacity |
+| `13-debugging-performance.md` | Debug flow, sanitizers, profiling tools, incident response |
+| `14-behavioral-leadership.md` | Behavioral: STAR, ownership, conflict, mentoring |
+| `15-mock-interview-bank.md` | Ngan hang cau hoi mock interview (chua co dap an chi tiet) |
 
 ## Quy uoc file
 
