@@ -2061,3 +2061,775 @@ typedef enum {
 | 23 | Handover? | Chuyển UE giữa cells mà không gian doan. X2 handover phổ biến nhất |
 | 24 | ISSU? | In-Service Software Upgrade: nâng cấp không downtime, dùng active/standby |
 
+---
+
+## Phần 10: 5G L2 DEEP DIVE — Tieto/TietoEvry Focus
+
+TietoEvry (Tieto Tech Consulting) tuyển "Senior Software Engineer C, 5G L2" — tập trung vào MAC/RLC/PDCP layer trên gNodeB. Phần này đi sâu hơn vào L2.
+
+---
+
+### Q24. 5G NR MAC Scheduler hoạt động thế nào? Các thuật toán scheduling phổ biến?
+
+**A:**
+- EN: The MAC scheduler is the "brain" of gNodeB — decides which UE gets radio resources (time/frequency) every slot. Inputs: Buffer Status Reports (BSR), Channel Quality (CQI/CSI), QoS requirements, HARQ feedback. Scheduling algorithms: Round Robin (fairness), Proportional Fair (balance throughput/fairness), Max C/I (max throughput), QoS-aware (deadline-based for URLLC). In 5G NR, scheduling runs per-slot which can be as fast as 0.125ms (mu=3).
+- VI: MAC scheduler là "bộ não" của gNodeB — quyết định UE nào được tài nguyên radio (time/frequency) mỗi slot. Input: BSR, CQI/CSI, QoS, HARQ feedback. Thuật toán: Round Robin, Proportional Fair, Max C/I, QoS-aware. Trong 5G NR, scheduling chạy mỗi slot (nhanh nhất 0.125ms).
+
+```
+Inputs to Scheduler:
+  ┌─────────────────────────────────────────────────┐
+  │ BSR (UE buffer status)                          │
+  │ CQI/CSI (channel quality per UE)               │
+  │ QoS (GBR, delay budget, priority)              │
+  │ HARQ feedback (ACK/NACK → retransmission)      │
+  │ Power headroom (UE tx power available)          │
+  │ SRS measurements (UL channel estimation)        │
+  └──────────────────────┬──────────────────────────┘
+                         │
+                  ┌──────▼──────┐
+                  │  Scheduler  │  runs every slot
+                  │  Algorithm  │  (0.5ms for mu=1)
+                  └──────┬──────┘
+                         │
+  Output: DCI (Downlink Control Information)
+  ┌──────────────────────┴──────────────────────────┐
+  │ - UE X: RBs 10-25, MCS 20, 2 layers, HARQ #3  │
+  │ - UE Y: RBs 30-45, MCS 15, 1 layer, HARQ #1   │
+  │ - UE Z: retransmission HARQ #5, RV=1           │
+  └─────────────────────────────────────────────────┘
+```
+
+Scheduling algorithms:
+
+| Algorithm | Formula (simplified) | Use case |
+|---|---|---|
+| Round Robin | Equal turns | Fairness, simple |
+| Proportional Fair | `priority = instant_rate / avg_rate` | Balance throughput & fairness |
+| Max C/I | Schedule UE with best channel | Max cell throughput |
+| QoS-aware (5QI) | Deadline-based priority | URLLC (1ms latency) |
+
+```c
+// Proportional Fair scheduler (simplified)
+typedef struct {
+    uint16_t ue_id;
+    double instant_rate;  // from CQI → achievable rate
+    double avg_rate;      // exponential moving average
+    double pf_metric;     // scheduling priority
+} sched_ue_t;
+
+void pf_scheduler(sched_ue_t* ues, int num_ues, int num_rbs) {
+    // Calculate PF metric for each UE
+    for (int i = 0; i < num_ues; i++) {
+        if (ues[i].avg_rate > 0)
+            ues[i].pf_metric = ues[i].instant_rate / ues[i].avg_rate;
+        else
+            ues[i].pf_metric = DBL_MAX;  // new UE gets high priority
+    }
+
+    // Sort by PF metric (descending)
+    qsort(ues, num_ues, sizeof(sched_ue_t), cmp_pf_desc);
+
+    // Allocate RBs to UEs in priority order
+    int rb_allocated = 0;
+    for (int i = 0; i < num_ues && rb_allocated < num_rbs; i++) {
+        int rbs_for_ue = calculate_rbs_needed(ues[i].ue_id);
+        rbs_for_ue = MIN(rbs_for_ue, num_rbs - rb_allocated);
+        allocate_rbs(ues[i].ue_id, rb_allocated, rbs_for_ue);
+        rb_allocated += rbs_for_ue;
+    }
+
+    // Update average rates
+    for (int i = 0; i < num_ues; i++) {
+        double alpha = 0.001;  // smoothing factor
+        ues[i].avg_rate = (1 - alpha) * ues[i].avg_rate
+                        + alpha * (was_scheduled(ues[i].ue_id) ? ues[i].instant_rate : 0);
+    }
+}
+```
+
+5G NR specific scheduling challenges:
+- **Numerology-aware**: different SCS = different slot duration
+- **BWP switching**: scheduler can move UE between Bandwidth Parts
+- **Mini-slot scheduling**: 2/4/7 symbol allocations for URLLC
+- **Beam-based scheduling**: different beams = different channel quality
+- **Inter-cell interference coordination**: coordinate with neighbor cells
+
+---
+
+### Q25. 5G NR RLC layer — AM mode chi tiết. Polling, status report, reassembly?
+
+**A:**
+- EN: RLC AM (Acknowledged Mode) provides reliable delivery via ARQ. Key mechanisms: (1) Segmentation of large SDUs into PDUs fitting MAC grant, (2) Polling — sender requests status report after N PDUs or timer expiry, (3) Status PDU — receiver reports ACK/NACK bitmap for each SN, (4) Retransmission of NACKed PDUs, (5) Reassembly — receiver reorders and delivers complete SDUs to PDCP. 5G NR RLC uses 12-bit or 18-bit sequence numbers.
+- VI: RLC AM cung cấp truyền tin cậy qua ARQ. Cơ chế chính: (1) Segmentation SDU thành PDU vừa MAC grant, (2) Polling — sender yêu cầu status report, (3) Status PDU — receiver báo ACK/NACK bitmap, (4) Retransmission, (5) Reassembly — receiver sắp xếp lại và deliver SDU hoàn chỉnh lên PDCP.
+
+```
+Sender (gNodeB)                              Receiver (UE)
+    |                                            |
+    |-- RLC PDU SN=0 (first segment) ---------> |
+    |-- RLC PDU SN=1 --------------------------> |
+    |-- RLC PDU SN=2 ----X (lost) ---------->    |
+    |-- RLC PDU SN=3 --------------------------> |
+    |-- RLC PDU SN=4 [Poll bit=1] ------------> |  ← request status
+    |                                            |
+    |<--- STATUS PDU [ACK=5, NACK=2] ---------- |  ← SN 2 missing
+    |                                            |
+    |-- RLC PDU SN=2 (retransmission) --------> |
+    |                                            |  reassemble & deliver
+```
+
+RLC AM state variables (per spec TS 38.322):
+```c
+typedef struct {
+    // Sender side
+    uint32_t tx_next;           // SN for next new PDU
+    uint32_t tx_next_ack;       // lowest SN not yet ACKed
+    uint32_t poll_sn;           // SN when poll was sent
+    uint16_t pdu_without_poll;  // count PDUs since last poll
+    uint16_t byte_without_poll; // bytes since last poll
+    timer_t  t_poll_retransmit; // poll retransmit timer
+
+    // Receiver side
+    uint32_t rx_next;           // next expected SN
+    uint32_t rx_next_highest;   // highest SN received + 1
+    uint32_t rx_highest_status; // highest SN for status report
+    timer_t  t_reassembly;      // trigger status report on gap
+    timer_t  t_status_prohibit; // rate-limit status PDUs
+} rlc_am_entity_t;
+
+// Segmentation: split SDU to fit MAC grant
+void rlc_am_segment(rlc_am_entity_t* entity, uint8_t* sdu,
+                    uint32_t sdu_len, uint32_t mac_grant) {
+    uint32_t header_size = 2;  // minimal RLC header
+    uint32_t max_payload = mac_grant - header_size;
+    uint32_t offset = 0;
+
+    while (offset < sdu_len) {
+        uint32_t seg_len = MIN(max_payload, sdu_len - offset);
+        bool is_first = (offset == 0);
+        bool is_last  = (offset + seg_len == sdu_len);
+
+        rlc_pdu_t* pdu = build_rlc_pdu(
+            entity->tx_next,
+            sdu + offset, seg_len,
+            is_first ? SI_FIRST : (is_last ? SI_LAST : SI_MIDDLE),
+            offset  // segment offset (SO field)
+        );
+
+        // Check if poll needed
+        entity->pdu_without_poll++;
+        if (should_poll(entity)) {
+            pdu->poll_bit = 1;
+            entity->poll_sn = entity->tx_next;
+            start_timer(&entity->t_poll_retransmit);
+        }
+
+        submit_to_mac(pdu);
+        offset += seg_len;
+    }
+    entity->tx_next++;
+}
+```
+
+Key timers:
+| Timer | Purpose | Typical value |
+|---|---|---|
+| t-PollRetransmit | Resend poll if no status received | 45ms |
+| t-Reassembly | Detect gap → trigger status report | 35ms |
+| t-StatusProhibit | Rate-limit status reports | 10ms |
+
+---
+
+### Q26. PDCP trong 5G NR — Duplicate detection, reordering window, và vai trò trong handover?
+
+**A:**
+- EN: PDCP provides: header compression (ROHC), ciphering (encryption), integrity protection, in-order delivery via reordering window, duplicate detection via COUNT (HFN + SN). During handover: PDCP buffers unacknowledged PDUs for retransmission to target cell, ensuring lossless mobility. 5G NR adds PDCP duplication for reliability (send same PDU on two legs).
+- VI: PDCP cung cấp: nén header (ROHC), mã hóa, bảo vệ toàn vẹn, delivery theo thứ tự qua reordering window, phát hiện trùng lặp qua COUNT (HFN + SN). Trong handover: PDCP buffer các PDU chưa ACK để retransmit sang cell đích, đảm bảo không mất data.
+
+```
+PDCP COUNT = [HFN (Hyper Frame Number)] [SN (Sequence Number)]
+             ├── 20 bits (18-bit SN) ──┤├─── 18 bits ──────┤
+             
+HFN increments when SN wraps around → provides unique ID for each PDU
+Used for: ciphering (input to crypto), duplicate detection, reordering
+```
+
+Handover with PDCP:
+```
+Source gNodeB          UE              Target gNodeB
+     |                  |                    |
+     |-- PDCP SN=5 --> |                    |
+     |-- PDCP SN=6 --> | (received)         |
+     |-- PDCP SN=7 --> | (lost in air)      |
+     |                  |                    |
+  [Handover triggered]  |                    |
+     |                  |                    |
+     |===== Forward unACKed PDUs (SN=7+) ==>|  (via Xn)
+     |                  |                    |
+     |                  |-- RACH ----------->|  (UE connects to target)
+     |                  |<-- PDCP SN=7 ----- |  (retransmit from target)
+     |                  |<-- PDCP SN=8 ----- |  (new data from target)
+     |                  |                    |
+     UE: reorder, discard duplicates (SN=5,6 already received)
+```
+
+PDCP duplication (5G NR feature for URLLC):
+```c
+// Same PDCP PDU sent on two RLC entities (two legs/carriers)
+// Receiver discards duplicate based on COUNT
+
+typedef struct {
+    uint32_t count;         // HFN + SN
+    bool     duplication;   // is duplication active?
+    uint8_t  num_legs;      // 1 or 2
+    rlc_entity_t* legs[2];  // primary + secondary RLC
+} pdcp_entity_t;
+
+void pdcp_send_with_duplication(pdcp_entity_t* entity, uint8_t* sdu, uint32_t len) {
+    uint8_t* pdu = pdcp_build_pdu(entity->count, sdu, len);
+    
+    // Send on primary leg
+    rlc_send(entity->legs[0], pdu, pdu_len);
+    
+    // Send duplicate on secondary leg (different carrier/cell)
+    if (entity->duplication && entity->num_legs > 1) {
+        rlc_send(entity->legs[1], pdu, pdu_len);
+    }
+    
+    entity->count++;
+}
+```
+
+---
+
+### Q27. Cloud-native RAN (O-RAN, vRAN) — xu hướng mới mà Tieto đang làm?
+
+**A:**
+- EN: Cloud-native RAN virtualizes network functions on COTS hardware + containers. O-RAN (Open RAN) defines open interfaces between CU/DU/RU allowing multi-vendor deployment. vRAN runs L2/L3 on x86/ARM servers instead of proprietary DSP platforms. Key enablers: DPDK for fast packet processing, real-time Linux (PREEMPT_RT), hardware accelerators (FPGAs/GPUs for L1), Kubernetes for orchestration. Tieto works with operators on RAN modernization, cloud-native network functions.
+- VI: Cloud-native RAN ảo hóa network functions trên hardware COTS + containers. O-RAN mở interface giữa CU/DU/RU cho multi-vendor. vRAN chạy L2/L3 trên server x86/ARM thay vì DSP platform riêng. Enablers: DPDK, RT-Linux, hardware accelerator, Kubernetes. Tieto làm RAN modernization, cloud-native NFs.
+
+```
+Traditional RAN:                    Cloud-native RAN (vRAN):
+┌────────────────────┐              ┌─────────────────────────┐
+│ Proprietary HW     │              │ Kubernetes Cluster       │
+│ (Ericsson/Nokia    │              │ ┌─────┐ ┌─────┐ ┌─────┐│
+│  custom platform)  │              │ │CU   │ │DU   │ │Near │││
+│ ┌──────────────┐   │              │ │Pod  │ │Pod  │ │RT   │││
+│ │ L1 (DSP)     │   │              │ │(C++) │ │(C)  │ │RIC  │││
+│ │ L2 (DSP/ARM) │   │              │ └─────┘ └─────┘ └─────┘│
+│ │ L3 (ARM)     │   │              │     x86/ARM Server      │
+│ └──────────────┘   │              │     (COTS hardware)     │
+└────────────────────┘              └─────────────────────────┘
+                                     + FPGA/GPU accelerator for L1
+```
+
+O-RAN architecture:
+```
+┌──────────────────────────────────────────────────────────┐
+│                    SMO (Service Management)               │
+├──────────────────────────────────────────────────────────┤
+│  Non-RT RIC          │         Near-RT RIC               │
+│  (>1s decisions:     │         (<1s decisions:           │
+│   policy, ML model)  │          traffic steering,        │
+│                      │          load balancing)           │
+├──────────────────────┴───────────────────────────────────┤
+│  O-CU-CP    │  O-CU-UP    │  O-DU          │  O-RU      │
+│  (RRC,PDCP) │  (PDCP-U)   │  (RLC,MAC,Hi-PHY) │  (Lo-PHY,RF)│
+├──────────────┼─────────────┼─────────────────┼────────────┤
+│     E2       │    E1       │    F1          │  Fronthaul  │
+│  interface   │  interface  │  interface     │  (eCPRI)    │
+└──────────────┴─────────────┴─────────────────┴────────────┘
+```
+
+Key technologies for vRAN software engineer:
+```bash
+# DPDK: kernel bypass for fast packet I/O
+# Process millions of packets/sec on COTS x86 server
+dpdk_rx_burst(port, queue, mbufs, burst_size);
+
+# Real-time Linux: PREEMPT_RT patch
+# Bounded latency for L2 processing
+chrt -f 90 ./du_l2_process  # run with FIFO priority 90
+
+# CPU isolation + affinity
+isolcpus=4-15              # kernel parameter
+taskset -c 4-7 ./mac_sched # pin MAC scheduler to cores 4-7
+
+# Huge pages: avoid TLB misses
+echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+```
+
+Tieto's role: Consulting & development for operators modernizing from proprietary RAN to open/cloud-native RAN.
+
+---
+
+### Q28. Testing trong telecom software — Unit test, integration test, system test. Tieto development process?
+
+**A:**
+- EN: Telecom testing pyramid: Unit tests (per function/module, mocked dependencies, run in seconds), Component tests (per layer, e.g. MAC scheduler with simulated UEs), Integration tests (multi-layer, e.g. RRC+MAC+RLC with S1AP stub), System tests (full protocol stack with UE simulator + real RF or faded channel), Regression tests (run on every commit, catch spec compliance regressions). Tieto uses Agile/SAFe, CI/CD pipelines, and automated test frameworks.
+- VI: Testing telecom: Unit test (per function, mock dependencies), Component test (per layer), Integration test (multi-layer), System test (full stack + UE simulator), Regression test (mỗi commit). Tieto dùng Agile/SAFe, CI/CD, automated test framework.
+
+```
+Test Pyramid (telecom):
+
+         /\
+        /  \     System Test (UE simulator, RF fading)
+       /    \    — End-to-end call flow (attach, data, handover)
+      /      \   — Performance (throughput, latency under load)
+     /--------\
+    /          \  Integration Test (multi-layer)
+   /            \ — RRC + S1AP message exchange
+  /              \— MAC + PHY interaction (scheduling accuracy)
+ /----------------\
+/                  \ Component Test (single layer)
+/                    \— MAC scheduler with N mocked UEs
+/                      \— RLC AM with sequence of SDUs
+/------------------------\
+/                          \ Unit Test (per function)
+/                            \— ASN.1 encode/decode correctness
+/                              \— Timer start/stop/expiry
+/________________________________\— Buffer management alloc/free
+```
+
+Unit test example (Google Test, common in Tieto projects):
+```cpp
+// Test RLC AM segmentation
+TEST(RlcAmTest, SegmentLargeSDU) {
+    RlcAmEntity entity;
+    entity.init(RLC_SN_SIZE_18BIT);
+
+    uint8_t sdu[3000];  // larger than typical MAC grant
+    fill_test_data(sdu, sizeof(sdu));
+
+    // MAC grants 500 bytes
+    auto pdus = entity.segment(sdu, sizeof(sdu), /*mac_grant=*/500);
+
+    EXPECT_GE(pdus.size(), 6);  // 3000/500 = 6 segments
+    EXPECT_EQ(pdus[0].si, SI_FIRST_SEGMENT);
+    EXPECT_EQ(pdus.back().si, SI_LAST_SEGMENT);
+
+    // Reassemble and verify
+    auto reassembled = reassemble(pdus);
+    EXPECT_EQ(reassembled.size(), sizeof(sdu));
+    EXPECT_EQ(memcmp(reassembled.data(), sdu, sizeof(sdu)), 0);
+}
+
+// Test HARQ process state transitions
+TEST(HarqTest, RetransmissionOnNack) {
+    HarqProcess proc(/*id=*/0, /*max_retx=*/4);
+    proc.new_tx(test_transport_block);
+
+    EXPECT_EQ(proc.state(), HARQ_WAITING_ACK);
+
+    proc.handle_feedback(/*ack=*/false);
+    EXPECT_EQ(proc.state(), HARQ_NACK_RECEIVED);
+    EXPECT_EQ(proc.retx_count(), 1);
+    EXPECT_EQ(proc.rv(), 1);  // redundancy version incremented
+}
+```
+
+CI/CD in telecom (Tieto process):
+```
+Developer commit
+    │
+    ▼
+┌──────────────┐
+│ Build (GCC/  │  ← cross-compile for target (ARM/x86)
+│ ARM toolchain)│
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│ Static       │  ← Coverity, cppcheck, MISRA-C checks
+│ Analysis     │
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│ Unit Tests   │  ← Google Test, ~1000 tests, <5 min
+│ (host)       │
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│ Component    │  ← Layer-level tests with mock, ~30 min
+│ Tests        │
+└──────┬───────┘
+       │
+┌──────▼───────────┐
+│ Integration Test │  ← Multi-layer on target HW, ~2-4 hours
+│ (nightly)        │
+└──────┬───────────┘
+       │
+┌──────▼───────────┐
+│ System Test      │  ← Full E2E with UE simulator, ~8 hours
+│ (weekly/release) │
+└──────────────────┘
+```
+
+---
+
+### Q29. Agile trong telecom — SAFe, sprint planning với 3GPP spec features?
+
+**A:**
+- EN: Large telecom projects (Ericsson, Nokia, Tieto) often use SAFe (Scaled Agile Framework) with: Program Increments (PI, ~10 weeks), sprint = 2 weeks, feature = one 3GPP spec section implemented and tested. Challenges: features traced to specific TS sections, backward compatibility mandatory, testing requires expensive UE simulators, cross-team dependencies (L1 team, L2 team, L3 team). Tieto engineers work in feature teams, each team owns a slice of the protocol stack.
+- VI: Telecom project lớn dùng SAFe: PI ~10 tuần, sprint 2 tuần, feature = 1 section spec 3GPP implemented & tested. Thách thức: traceability tới spec, backward compatibility, test cần UE simulator đắt, cross-team dependencies. Tieto engineer làm trong feature team, mỗi team own 1 phần protocol stack.
+
+Typical feature workflow:
+```
+1. 3GPP spec analysis
+   TS 38.321 Section 5.4.3 → "Random Access Procedure: 4-step RACH"
+   
+2. Design (System Architecture Document)
+   - Message flow diagram
+   - State machine specification
+   - Interface to other layers (PHY ↔ MAC ↔ RRC)
+   - Memory/CPU budget estimation
+   
+3. Implementation (C/C++)
+   - Code according to design + spec
+   - Unit tests alongside code
+   - Code review (peer review mandatory)
+   
+4. Testing
+   - Component test (MAC RACH with mocked PHY)
+   - Integration test (full L1-L3 RACH procedure)
+   - Conformance test (3GPP test cases TS 38.523)
+   
+5. Delivery to main branch → nightly build → system test
+```
+
+Key Agile practices at Tieto:
+- **Definition of Done**: feature coded + unit tests + component test + code review + no regressions
+- **Sprint demo**: demonstrate feature working on target/simulator
+- **Retrospective**: continuous improvement
+- **Feature flags**: enable/disable features for different customer configurations
+- **Trunk-based development**: short-lived branches, merge daily
+
+---
+
+### Q30. Debugging 5G L2 issues — Common bugs và cách approach?
+
+**A:**
+- EN: Common 5G L2 bugs: scheduling starvation (UE never gets resources), HARQ stuck (process never freed), RLC window stall (all SNs consumed, no status report received), memory leaks in buffer pools, race conditions in multi-core (DU runs on multiple cores), timer bugs (wrong duration or missed expiry). Debug approach: protocol traces + state dump + counters + reproducible test case.
+- VI: Bug L2 phổ biến: scheduling starvation, HARQ stuck, RLC window stall, memory leak buffer pool, race condition multi-core, timer bugs. Approach: protocol trace + state dump + counter + test case reproducible.
+
+Common bugs & debug approach:
+```
+Bug 1: "UE không nhận được data sau handover"
+  → Check PDCP reordering window
+  → Check if PDCP forwarded buffered PDUs to target
+  → Trace: SN sequence at source vs target
+  → Root cause: HFN desync after handover
+
+Bug 2: "Throughput drops after 30 seconds"  
+  → Check RLC AM window: is tx_next - tx_next_ack == window_size?
+  → If yes → RLC window stall → status PDU not received
+  → Check t-StatusProhibit timer configuration
+  → Root cause: status PDU lost + prohibit timer too long
+
+Bug 3: "One UE starved, others get resources"
+  → Dump scheduler metric for that UE
+  → Check CQI report: is it reporting bad channel?
+  → Check BSR: is UE reporting buffer data?
+  → Root cause: BSR lost → scheduler thinks UE has no data
+
+Bug 4: "Random crash in MAC every ~2 hours"
+  → Enable memory pool guard patterns
+  → Check for buffer overflow in PDU building
+  → Use AddressSanitizer on host simulation build
+  → Root cause: off-by-one in RLC header size calculation
+```
+
+Debug tools in telecom:
+```bash
+# Protocol trace on running system
+trace_enable --module MAC --level DEBUG --ue 1234
+
+# State dump
+dump_ue_context --ue-id 1234
+# Output: RRC state, active bearers, HARQ processes, RLC entities
+
+# Counter/KPI monitoring
+show_counters --module MAC
+# MAC.ScheduledUEs.DL: 45
+# MAC.HarqNack.DL: 230
+# MAC.HarqRetxMax.DL: 3   ← high = channel issue or bug
+# MAC.RlcWindowStall: 0
+
+# Core dump analysis (when it crashes)
+gdb ./gnb_l2 core.12345
+bt                          # backtrace
+frame 3                     # go to relevant frame
+info locals                 # inspect variables
+p *ue_ctx                   # print UE context
+```
+
+---
+
+## Phần 11: ENGLISH INTERVIEW PREPARATION FOR TELECOM
+
+---
+
+### Q31. Telecom interview bằng tiếng Anh — Các mẫu câu và vocabulary quan trọng?
+
+**A:**
+- EN: Key vocabulary and sentence patterns for telecom C/C++ interviews in English. Focuses on: describing your work clearly, explaining technical decisions, discussing debugging experience, and handling "I don't know" gracefully.
+- VI: Từ vựng và mẫu câu quan trọng cho phỏng vấn telecom bằng tiếng Anh. Tập trung: mô tả công việc rõ ràng, giải thích quyết định kỹ thuật, thảo luận kinh nghiệm debug, và xử lý khi không biết câu trả lời.
+
+**A) Mô tả kinh nghiệm — "Tell me about yourself / your experience"**
+
+Templates:
+```
+"I have [X] years of experience in [C/C++ development], 
+mainly focused on [telecom/embedded systems]. 
+In my current/previous role, I worked on [specific layer/module] 
+of a [4G/5G] base station. My responsibilities included 
+[implementing/maintaining/debugging] the [MAC scheduler / RLC layer / ...]."
+
+"I'm familiar with [3GPP specifications], particularly [TS 38.321 for MAC layer].
+I've worked with [ASN.1 encoding], [SCTP protocol], and [real-time systems]."
+```
+
+Ví dụ cụ thể:
+```
+"In my previous role, I was part of the L2 team developing the 
+5G NR MAC layer. I implemented the HARQ feedback handling module 
+and optimized the scheduler for URLLC traffic. The code ran on 
+a multi-core ARM platform with strict timing requirements — 
+each slot had to be processed within 500 microseconds."
+```
+
+**B) Giải thích kỹ thuật — Describing technical concepts**
+
+Useful phrases:
+```
+"The purpose of [X] is to..."
+"[X] is responsible for [doing Y]"
+"The main difference between [A] and [B] is that..."
+"[X] works by [verb-ing]..."
+"In practice, this means..."
+"From a performance perspective..."
+"The tradeoff here is between [X] and [Y]"
+```
+
+Example:
+```
+Q: "Can you explain how HARQ works?"
+A: "HARQ stands for Hybrid Automatic Repeat reQuest. 
+    It combines forward error correction with retransmission.
+    When the receiver fails to decode a packet, it stores 
+    the received bits in a soft buffer and sends a NACK. 
+    The sender then retransmits, and the receiver combines 
+    both transmissions to improve the decoding probability.
+    In 5G NR, there are up to 16 parallel HARQ processes 
+    to maintain throughput while waiting for feedback."
+```
+
+**C) Mô tả debug experience**
+
+Template:
+```
+"We had an issue where [symptom].
+I investigated by [checking logs/traces/counters].
+I found that [root cause].
+The fix was [solution].
+I verified by [how you confirmed it works]."
+```
+
+Example:
+```
+"We had an issue where one specific UE would lose data 
+connection about 30 seconds after handover. I looked at 
+the PDCP trace and noticed the sequence numbers were 
+jumping — there was a gap. After checking the handover 
+procedure, I found that the HFN (Hyper Frame Number) was 
+not being synchronized correctly between the source and 
+target cells. The fix was to include the full COUNT value 
+in the handover context transfer."
+```
+
+**D) Khi không biết câu trả lời — Handling uncertainty**
+
+```
+"I'm not entirely sure about the exact details of [X], 
+but based on my understanding of [related concept Y], 
+I would expect it to work by [your best guess]."
+
+"I haven't worked directly with [X], but I'm familiar 
+with [similar concept Y] and I believe the principle is similar."
+
+"That's a good question. I don't have hands-on experience 
+with [X], but I'm very interested in learning about it. 
+Could you tell me more about how your team uses it?"
+
+"I would need to look at the specification to give you 
+a precise answer, but my general understanding is..."
+```
+
+**E) Vocabulary — Telecom terms bạn PHẢI phát âm đúng**
+
+| Term | Pronunciation | Nghĩa |
+|------|--------------|-------|
+| throughput | /ˈθruːpʊt/ | băng thông thực tế |
+| latency | /ˈleɪtənsi/ | độ trễ |
+| jitter | /ˈdʒɪtər/ | biến thiên độ trễ |
+| scheduler | /ˈʃedʒuːlər/ (US) hoặc /ˈʃɛdjuːlər/ (UK) | bộ lập lịch |
+| buffer | /ˈbʌfər/ | bộ đệm |
+| acknowledge | /əkˈnɒlɪdʒ/ | xác nhận |
+| retransmission | /riːtrænzˈmɪʃən/ | truyền lại |
+| bearer | /ˈbɛərər/ | kênh mang (radio bearer) |
+| segmentation | /sɛɡmɛnˈteɪʃən/ | phân đoạn |
+| handover | /ˈhændoʊvər/ | chuyển giao |
+| numerology | /njuːməˈrɒlədʒi/ | (5G) cấu hình subcarrier spacing |
+| integrity | /ɪnˈtɛɡrəti/ | toàn vẹn |
+| ciphering | /ˈsaɪfərɪŋ/ | mã hóa |
+| multiplexing | /ˈmʌltɪplɛksɪŋ/ | ghép kênh |
+| allocation | /æləˈkeɪʃən/ | cấp phát |
+| deterministic | /dɪtɜːmɪˈnɪstɪk/ | tất định |
+| redundancy | /rɪˈdʌndənsi/ | dư thừa (để backup) |
+| scalability | /skeɪləˈbɪləti/ | khả năng mở rộng |
+| idempotent | /aɪdɛmˈpoʊtənt/ | lũy đẳng |
+| concurrent | /kənˈkʌrənt/ | đồng thời |
+
+**F) Interview Q&A patterns — Câu hay gặp tại Tieto telecom**
+
+```
+Q: "Why do you want to work in telecom?"
+A: "I enjoy working close to the hardware and dealing with 
+    real-time constraints. Telecom software has strict performance 
+    and reliability requirements which makes the engineering 
+    challenges very interesting. I also like that the work has 
+    real-world impact — the code I write directly affects 
+    millions of users' connectivity."
+
+Q: "How do you handle working with specifications?"
+A: "In my experience, I start by identifying the relevant 
+    sections in the 3GPP spec for the feature I'm implementing. 
+    I read through the normative text, look at the message flow 
+    diagrams, and identify the state transitions. If something 
+    is unclear, I check the Change Requests (CRs) history or 
+    discuss with the system architect."
+
+Q: "Tell me about a challenging bug you've fixed."
+A: [Use the STAR template]
+   Situation: "We had intermittent data loss on high-load cells..."
+   Task: "I was assigned to investigate and fix it..."
+   Action: "I enabled detailed MAC traces and analyzed..."
+   Result: "The fix reduced packet loss by 99.8% and was 
+            delivered in the next sprint..."
+
+Q: "How do you ensure code quality?"
+A: "I follow several practices: I write unit tests alongside 
+    the implementation, I use static analysis tools like 
+    Coverity and cppcheck, I do thorough code reviews with 
+    colleagues, and I trace every feature back to the spec 
+    section to ensure compliance. For performance-critical 
+    code, I also profile on the target hardware."
+```
+
+---
+
+### Q32. English interview tips — Mẹo thực tế khi tiếng Anh chưa tốt?
+
+**A:**
+- EN: Practical tips for non-native English speakers in technical interviews: prepare scripted answers for common questions, use simple sentence structures, slow down rather than rush, use diagrams/whiteboard to supplement verbal explanation, practice pronunciation of key technical terms, and know "bridge phrases" to buy thinking time.
+- VI: Mẹo thực tế cho người chưa giỏi tiếng Anh khi phỏng vấn kỹ thuật: chuẩn bị sẵn câu trả lời cho câu hỏi phổ biến, dùng cấu trúc câu đơn giản, nói chậm thay vì nói nhanh, dùng hình vẽ/whiteboard hỗ trợ, luyện phát âm thuật ngữ kỹ thuật, và biết "bridge phrases" để câu giờ suy nghĩ.
+
+**1. Chuẩn bị trước (most important)**
+
+Viết sẵn và luyện nói 5 câu chuyện:
+- Self-introduction (30 giây + 1 phút version)
+- Dự án khó nhất / tự hào nhất
+- Bug khó nhất đã fix
+- Cách làm việc nhóm / conflict resolution
+- Why this company / why telecom
+
+Luyện nói TO TIẾNG mỗi ngày 10-15 phút. Ghi âm, nghe lại.
+
+**2. Dùng cấu trúc câu đơn giản**
+
+```
+AVOID: "The thing that I was trying to do when I was working 
+        on that particular module which was part of the bigger 
+        system that handles..."
+
+BETTER: "I worked on the MAC scheduler module. My main task 
+         was to optimize the HARQ retransmission logic. The 
+         problem was [X]. I fixed it by [Y]."
+```
+
+Rules:
+- 1 ý = 1 câu (không nối quá 2 mệnh đề)
+- Chủ ngữ rõ ràng: "I did X", "The scheduler does Y", "HARQ ensures Z"
+- Active voice: "I implemented X" (không phải "X was implemented by me")
+
+**3. "Bridge phrases" — câu giờ khi cần nghĩ**
+
+```
+"That's a great question. Let me think about that for a moment..."
+"Let me break this down..."
+"So, the way I understand it is..."
+"If I recall correctly..."
+"To put it simply..."
+"What I mean is..."
+```
+
+**4. Khi không hiểu câu hỏi**
+
+```
+"Could you repeat that, please?"
+"Sorry, could you rephrase that?"
+"Do you mean [your understanding]?"
+"Just to clarify, are you asking about [X] or [Y]?"
+```
+
+KHÔNG BAO GIỜ giả vờ hiểu. Hỏi lại = professional. Trả lời sai câu hỏi = red flag.
+
+**5. Dùng hình vẽ (VERY EFFECTIVE)**
+
+```
+"Let me draw this out..."
+"Let me show you with a diagram..."
+"Here's how the data flows..."
+
+→ Vẽ diagram giúp:
+  - Interviewer hiểu bạn dù pronunciation chưa tốt
+  - Bạn có thêm thời gian suy nghĩ
+  - Chứng minh bạn hiểu concept, không chỉ thuộc lòng
+```
+
+**6. Practice plan — 2 tuần trước phỏng vấn**
+
+```
+Week 1:
+  Day 1-2: Viết script cho 5 câu chuyện (tiếng Anh)
+  Day 3-4: Đọc to, ghi âm, sửa pronunciation
+  Day 5-7: Mock interview với bạn hoặc ChatGPT voice mode
+
+Week 2:
+  Day 1-2: Review technical vocabulary (bảng trên)
+  Day 3-4: Practice explaining 3-4 concepts bằng tiếng Anh
+            (HARQ, scheduler, RLC AM, handover)
+  Day 5-6: Full mock interview (45 phút)
+  Day 7: Rest, review notes
+
+Daily: 10 phút shadow reading (đọc theo podcast/video tiếng Anh)
+```
+
+**7. Resources cụ thể**
+
+```
+- Podcast: "Software Engineering Daily" (general), YouTube "5G lectures"
+- Practice speaking: ChatGPT voice mode, Elsa Speak app
+- Technical English: đọc 3GPP specs (viết bằng English chuẩn)
+- Mock interview: Pramp.com (free), hoặc nhờ bạn bè
+```
+
+**8. Mindset**
+
+```
+- Interviewer đánh giá TECHNICAL SKILLS, không phải English proficiency
+- Accent không quan trọng — clarity mới quan trọng
+- Nói chậm + rõ ràng tốt hơn nói nhanh + lộn xộn
+- Nếu không nhớ từ tiếng Anh → mô tả concept bằng từ khác
+  VD: quên "segmentation" → "splitting the big packet into smaller pieces"
+- Silence 3-5 giây để suy nghĩ là HOÀN TOÀN BÌNH THƯỜNG
+```
+

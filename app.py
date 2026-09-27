@@ -1,68 +1,83 @@
-import streamlit as st
 import re
 from pathlib import Path
 
-st.set_page_config(page_title="C/C++ Interview Prep", layout="wide")
+import streamlit as st
 
+APP_DIR = Path(__file__).parent
+EXTRA_DIR = APP_DIR / "19-python-debugging"
 EXCLUDE_FILES = {"CLAUDE.md", "README.md", "README_APP.md", "QUICK_START.md", "BILINGUAL_QA_TEMPLATE.md"}
 
+GROUP_MAIN = "C/C++ Core (01-18)"
+GROUP_EXTRA = "Python & Debugging"
+PART_LABELS = {
+    "part1-python-core": "Part 1 | Python Core",
+    "part2-python-debugging": "Part 2 | Python Debugging",
+    "part3-cpp-gdb-debugging": "Part 3 | C/C++ Debugging (gdb)",
+    "part4-thuc-chien": "Part 4 | Bài tập thực chiến",
+}
 
+
+@st.cache_data
 def parse_qa(text):
-    """Parse markdown content into Q&A format. Handles both **A:** and A: formats."""
-    qa_blocks = re.split(r'^### Q\d+\.', text, flags=re.MULTILINE)[1:]
+    """Tach markdown thanh cac cap Q&A: heading '### Q<n>.' va dap an '**A:**' (hoac 'A:')."""
     questions = []
-    for block in qa_blocks:
-        lines = block.strip().split('\n', 1)
-        if len(lines) < 2:
-            continue
-        q_text = lines[0].strip()
-        a_text = lines[1].strip()
-        a_match = re.search(r'\*\*A:\*\*(.*?)(?=\n---|\n### Q|\Z)', a_text, re.DOTALL)
-        if not a_match:
-            a_match = re.search(r'^A:(.*?)(?=\n---|\n### Q|\Z)', a_text, re.DOTALL | re.MULTILINE)
-        if a_match:
-            a_content = a_match.group(1).strip()
-            if a_content:
-                questions.append({"question": q_text, "answer": a_content})
+    for block in re.split(r"^### Q\d+\.", text, flags=re.MULTILINE)[1:]:
+        head, _, body = block.strip().partition("\n")
+        match = re.search(r"\*\*A:\*\*(.*?)(?=\n---|\n### Q|\Z)", body, re.DOTALL)
+        if not match:
+            match = re.search(r"^A:(.*?)(?=\n---|\n### Q|\Z)", body, re.DOTALL | re.MULTILINE)
+        if match and match.group(1).strip():
+            questions.append({"question": head.strip(), "answer": match.group(1).strip()})
     return questions
 
 
-st.title("C/C++ Senior Interview Prep")
-st.markdown("---")
+def list_files(directory, numbered_only):
+    if not directory.exists():
+        return []
+    return sorted(
+        f for f in directory.glob("*.md")
+        if f.name not in EXCLUDE_FILES and (f.name[0].isdigit() or not numbered_only)
+    )
 
-# File selection
-APP_DIR = Path(__file__).parent
-md_files = sorted([
-    f for f in APP_DIR.glob("*.md")
-    if f.name not in EXCLUDE_FILES and f.name[0].isdigit()
-])
 
-if not md_files:
-    st.error("Khong tim thay file markdown nao")
+st.set_page_config(page_title="Interview Prep", layout="wide")
+st.title("Interview Prep")
+
+main_files = list_files(APP_DIR, numbered_only=True)
+extra_files = list_files(EXTRA_DIR, numbered_only=False)
+
+if not main_files and not extra_files:
+    st.error("Không tìm thấy file markdown nào")
     st.stop()
 
-selected_file = st.sidebar.selectbox(
-    "Chon chu de:",
-    options=[f.stem for f in md_files],
-    format_func=lambda x: x.replace("-", " | ", 1)
+groups = [GROUP_MAIN] + ([GROUP_EXTRA] if extra_files else [])
+group = st.sidebar.radio("Nhóm nội dung:", groups)
+files = extra_files if group == GROUP_EXTRA else main_files
+
+selected = st.sidebar.selectbox(
+    "Chọn chủ đề:",
+    options=[f.stem for f in files],
+    format_func=lambda stem: PART_LABELS.get(stem, stem.replace("-", " | ", 1)),
 )
 
-# Load & parse
-file_path = APP_DIR / f"{selected_file}.md"
-content = file_path.read_text(encoding="utf-8")
-questions = parse_qa(content)
+file_path = next(f for f in files if f.stem == selected)
+questions = parse_qa(file_path.read_text(encoding="utf-8"))
 
 if not questions:
-    st.warning(f"File `{selected_file}.md` khong co Q&A format.")
+    st.warning(f"File `{file_path.name}` không có Q&A format")
     st.stop()
 
-# Stats
-st.metric("Tong cau hoi", len(questions))
+keyword = st.sidebar.text_input("Tìm trong câu hỏi:", placeholder="ví dụ: pointer, gdb")
+if keyword:
+    questions = [q for q in questions if keyword.lower() in q["question"].lower()]
+
+expand_all = st.sidebar.checkbox("Mở sẵn đáp án")
+
+st.caption(f"{file_path.name} — {len(questions)} câu hỏi")
 st.markdown("---")
 
-# Display Q&A
 for idx, qa in enumerate(questions, 1):
     st.markdown(f"**Q{idx}. {qa['question']}**")
-    with st.expander("Xem dap an", expanded=False):
-        st.markdown(qa['answer'])
+    with st.expander("Xem đáp án", expanded=expand_all):
+        st.markdown(qa["answer"])
     st.markdown("")

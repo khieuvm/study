@@ -1,95 +1,44 @@
-# ⚡ Quick Start (5 phút)
+# Quick Start (2 phut)
 
-## Bước 1: Cài dependencies (1 phút)
+## Buoc 1: Cai dependencies
 
 ```bash
 cd Study
 pip install -r requirements.txt
 ```
 
-## Bước 2: Chạy Streamlit (ngay lập tức)
+## Buoc 2: Chay Streamlit
 
-**Chỉ muốn đọc đáp án?**
 ```bash
 streamlit run app.py
 ```
 
-**Muốn trả lời + được Ollama chấm?** (Bỏ qua bước 3, 4 nếu không cần)
-```bash
-streamlit run app_advanced.py
-```
-
-→ Browser mở tự động `http://localhost:8501`
+-> Browser mo tu dong `http://localhost:8501`
 
 ---
 
-## Bước 3: Cài Ollama (nếu muốn tính năng chấm điểm)
+## Cach dung
 
-### Windows / macOS / Linux
-Tải từ: https://ollama.ai/download
-
-Sau khi cài xong:
-
-```bash
-# Terminal/PowerShell mới, chạy:
-ollama serve
-```
+1. Sidebar: chon **Nhom noi dung** (`C/C++ Core (01-18)` hoac `Python & Debugging`)
+2. Chon chu de / part
+3. Go tu khoa vao o **Tim trong cau hoi** de loc
+4. Bam **Xem dap an** tung cau, hoac tick **Mo san dap an** de mo het
 
 ---
 
-## Bước 4: Download model (1 lần duy nhất)
+## Neu gap loi
 
-**Terminal khác** (giữ Terminal Ollama chạy):
-
-```bash
-# Option 1: Mistral (tốt nhất, ~7GB)
-ollama pull mistral
-
-# Option 2: Neural Chat (nhanh hơn, ~4GB)
-ollama pull neural-chat
-
-# Option 3: Phi (siêu nhanh, ~3GB)
-ollama pull phi
-```
+- **Streamlit khong mo browser** -> vao tay: http://localhost:8501
+- **Khong thay chu de moi** -> file `.md` phai bat dau bang so va co Q&A dung format (`### Q1.` + `**A:**`)
 
 ---
 
-## Xong! 🎉
+## Cac file can biet
 
-Mở Streamlit → Chọn "✍️ Trả lời" → Nhập đáp án → Bấm "Nộp" → Ollama chấm điểm
-
----
-
-## Nếu gặp lỗi
-
-### ❌ "Ollama chưa chạy"
-→ Mở terminal mới, chạy `ollama serve`
-
-### ❌ "Không có model nào"
-→ Chạy `ollama pull mistral` (cần ~5-10 phút)
-
-### ❌ "Streamlit không mở browser"
-→ Truy cập tay: http://localhost:8501
-
-### ❌ "Chấm điểm quá chậm"
-→ Dùng model nhẹ: `phi` hoặc `neural-chat`
-
----
-
-## Các file bạn cần biết
-
-| File | Mục đích |
+| File | Muc dich |
 |------|---------|
-| `app.py` | Đơn giản: chỉ show/hide đáp án |
-| `app_advanced.py` | Đầy đủ: trả lời + Ollama chấm |
-| `01-10-*.md` | 10 chủ đề Q&A (mở bằng text editor) |
-| `CLAUDE.md` | Hướng dẫn project |
+| `app.py` | Streamlit app (chi doc) |
+| `01-18-*.md` | Chu de C/C++ core |
+| `19-python-debugging/part1-4.md` | Python & debugging |
+| `CLAUDE.md` | Huong dan project |
 
----
-
-## Tip nhanh
-
-- 📖 Chế độ **Đọc**: ôn nhanh Q&A
-- ✍️ Chế độ **Trả lời**: luyện tập thực tế
-
-Chúc bạn ôn tập vui vẻ! 🚀

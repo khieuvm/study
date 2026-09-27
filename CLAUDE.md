@@ -25,6 +25,7 @@ He thong toan bo kien thuc C/C++ tu co ban den nang cao, bao gom dap an chi tiet
 | `13-debugging-performance.md` | Debug flow, sanitizers, profiling tools, incident response |
 | `14-behavioral-leadership.md` | Behavioral: STAR, ownership, conflict, mentoring |
 | `15-mock-interview-bank.md` | Ngan hang cau hoi mock interview (chua co dap an chi tiet) |
+| `19-python-debugging/part1-4.md` | Python core, Python debugging, gdb debugging, bai tap thuc chien |
 
 ## Quy uoc file
 
@@ -47,8 +48,7 @@ He thong toan bo kien thuc C/C++ tu co ban den nang cao, bao gom dap an chi tiet
 
 ## Quy tac khi update code
 
+- `app.py` la app chi-doc (khong co che do tra loi / luu tien do) — giu nguyen pham vi nay
 - Sau khi update code Streamlit, LUON verify syntax (`ast.parse`) va restart app
-- Review lai logic truoc khi bao xong: widget state phai dong bo voi progress data
-- Stats/metrics phai render SAU khi widgets update progress (dung placeholder pattern)
 - Khong dung emoji trong code Streamlit (encoding issues tren Windows)
 - Test parse_qa tren moi file `.md` sau khi thay doi parser
